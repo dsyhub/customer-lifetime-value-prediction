@@ -4,7 +4,8 @@ matplotlib
 seaborn
 scikit-learn
 xgboost
-streamlit
 joblib
 google-cloud-bigquery
 db-dtypes
+streamlit
+watchdog

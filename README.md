@@ -2,35 +2,27 @@
 
 ## Obejctive
 
-Identify customers at risk of leaving (chruning) in the next 30 days to target them with retention campaigns.
+The project's goal was to identify customers at risk of leaving (chruning) in the next 30 days to target them with retention campaigns. The goal is to move beyond simple accuracy and build a model that optimizes **profitability** by targeting only the users worth saving.
 
-## Tech Stack
+## Executive Summary
 
-- **SQL (BigQuery):** Feature engineering and data extraction.
-- **Python (Pandas, XGBoost):** Data processing and predictive modeling.
-- **Streamlit:** Interactive dashboard for stakeholders.
+In e-commerce, acquiring a new cusotmer is 5x more expensive than retaining an existing one. This project built a maching learning solution to predict customer churn (users who stop buying) and optimize retention campaign budgets.
 
-## Structure
+**Key Result:** The model identified an optimal targeting strategy that generates **$29,070 in projected profit** per campaign by targeting the 81% most at-risk users while avoding waste on the 19% of loyal "safe" customers.
 
-```
-ecommerce-churn-prediction/
-│
-├── README.md              # The "Cover Letter" of my project (Executive Summary)
-├── .gitignore
-├── requirements.txt       # List of Python libraries (pandas, xgboost, etc.)
-│
-├── sql/                   # Store SQL queries here
-│   └── feature_engineering.sql
-│
-├── data/                  # Local data storage (Git will ignore this folder)
-│   ├── raw/               # The CSV you download from BigQuery
-│   └── processed/         # Cleaned data ready for modeling
-│
-├── notebooks/             # Jupyter Notebooks
-│   ├── 01_data_extraction.ipynb
-│   ├── 02_eda_and_modeling.ipynb
-│   └── 03_evaluation_and_insights.ipynb
-│
-└── src/                   # (Optional) Python scripts for the Streamlit app later
-    └── app.py
-```
+## Technical Approach
+
+- **Data Extraction:** SQL (BigQuery) with "Time Travel" split to prevent data leakage.
+- **Handling Imbalance:** The dataset was 95% Churn / 5% Retained. Used **XGBoost with `scale_pos_weight`** and optimized for Recall on the minority class.
+- **Business Solution:** Built a profit curve to determine the financial threshold for sending coupons, moving beyond simple "Accuracy" metrics.
+
+## Key Insights
+
+1. **The "Zone of Death":** Customer retention probability drops to near zero after **100 days** of inactivity. Immediate intervention is required between Day 30-60.
+2. **Money Doesn't Buy Loyalty:** High spenders ("Whales") churn at the exact same rate as low spenders. VIP status is not a safety net.
+3. **Strategic Targeting:** Spamming the entire user base wastes budget. The model saves money by filtering out the top 19% of highly loyal users who do not need a discount to stay.
+
+## How to Run
+
+1. **Install Dependencies:** `pip install -r requirements.txt`
+2. **Run the App:** `streamlit run src/app.py`
