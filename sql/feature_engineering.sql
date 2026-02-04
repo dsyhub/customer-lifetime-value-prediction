@@ -5,13 +5,13 @@ WITH user_behavior AS (
   SELECT
     user_id,
     -- Feature 1: Recency (Days since last order before cutoff)
-    DATE_DIFF(cutoff_date, MAX(DATE(created_at)), DAY) as days_since_last_order,
+    DATE_DIFF(cutoff_date, MAX(DATE(created_at)), DAY) AS days_since_last_order,
     
     -- Feature 2: Frequency (Total orders before cutoff)
-    COUNT(order_id) as total_orders,
+    COUNT(order_id) AS total_orders,
     
     -- Feature 3: Monetary (Total spend before cutoff)
-    SUM(sale_price) as total_spend,
+    SUM(sale_price) AS total_spend,
     
     -- Feature 4: Average Order Value (AOV)
     CASE WHEN COUNT(order_id) = 0 THEN 0 ELSE SUM(sale_price) / COUNT(order_id) END as avg_order_value,
@@ -19,7 +19,7 @@ WITH user_behavior AS (
     -- Feature 5: Returns (Risk Signal)
     COUNTIF(status = 'Returned') as returned_orders,
     CASE WHEN COUNT(order_id) = 0 THEN 0 ELSE IEEE_DIVIDE(COUNTIF(status = 'Returned'), COUNT(order_id)) END as return_rate
-    
+  
   FROM `bigquery-public-data.thelook_ecommerce.order_items`
   WHERE DATE(created_at) < cutoff_date -- Strict "Past" only
   GROUP BY 1

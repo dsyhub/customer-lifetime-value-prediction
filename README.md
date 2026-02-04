@@ -1,4 +1,4 @@
-# High-Value Customer Churn Prediction
+# Customer Churn Prediction & Revenue Recovery
 
 ## Obejctive
 
