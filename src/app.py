@@ -7,11 +7,13 @@ import os
 # NOTE: Ensure to run this from the root folder: `streamlit run src/app.py`
 # CONFIG
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MODEL_PATH = REPO_ROOT / "models" / "churn_xgb_model.pkl"
-model_path = Path(os.getenv("CHURN_MODEL_PATH", str(DEFAULT_MODEL_PATH))).expanduser().resolve()
+DEFAULT_MODEL_PATH = REPO_ROOT / "models" / "propensity_model.pkl"
+model_path = (
+    Path(os.getenv("CHURN_MODEL_PATH", str(DEFAULT_MODEL_PATH))).expanduser().resolve()
+)
 
 if not os.path.exists(model_path):
-    st.error(f"Moldel not fdound at: {model_path}")
+    st.error(f"Model not found at: {model_path}")
     st.info("Did you run the 'Save Model' cell in notebook 02?")
     st.stop()
 
@@ -42,7 +44,7 @@ with st.form("prediction_form"):
         returned = st.number_input("Returned Orders", 0, 50, 0)
 
         # Calculate return rate automatically
-        # NOTE: we don't ask for "return_rate" directly, we calculate it just like the model expects
+        # we don't ask for "return_rate" directly, we calculate it just like the model expects
         return_rate = returned / total_orders if total_orders > 0 else 0
         st.metric("Return Rate", f"{return_rate:.1%}")
 
@@ -69,9 +71,8 @@ if submitted:
     st.divider()
 
     if prediction == 1:
-        st.success(f"✅ **Safe!** Probabiliy of Retention: {prob_retained:.1%}")
+        st.success(f"✅ **Safe!** Probability of Retention: {prob_retained:.1%}")
         st.write("Recommendation: No immediate action needed.")
     else:
         st.error(f"⚠️ **At Risk!** Probability of Retention: {prob_retained:.1%}")
         st.write(f"**Action:** Send 'We Miss You' campaign immediately.")
-

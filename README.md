@@ -6,9 +6,9 @@ The project's goal was to identify customers at risk of leaving (churning) in th
 
 ## Executive Summary
 
-In e-commerce, acquiring a new cusotmer is 5x more expensive than retaining an existing one. This project built a maching learning solution to predict customer churn (users who stop buying) and optimize retention campaign budgets.
+In e-commerce, acquiring a new customer is 5x more expensive than retaining an existing one. This project built a machine learning solution to predict customer churn (users who stop buying) and optimize retention campaign budgets.
 
-**Key Result:** The model identified an optimal targeting strategy that generates **$29,070 in projected profit** per campaign by targeting the 81% most at-risk users while avoding waste on the 19% of loyal "safe" customers.
+**Key Result:** The model identified an optimal targeting strategy that generates **$29,070 in projected profit** per campaign by targeting the 81% most at-risk users while avoiding waste on the 19% of loyal "safe" customers.
 
 ## Technical Approach
 
