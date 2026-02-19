@@ -1,5 +1,7 @@
 # Customer Churn Prediction & Revenue Recovery
 
+<!-- TODO: update README -->
+
 ## Objective
 
 The project's goal was to identify customers at risk of leaving (churning) in the next 30 days to target them with retention campaigns. The goal is to move beyond simple accuracy and build a model that optimizes **profitability** by targeting only the users worth saving.
