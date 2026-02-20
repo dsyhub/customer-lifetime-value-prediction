@@ -158,3 +158,6 @@ LEFT JOIN future_purchases fp ON ub.user_id = fp.user_id
 -- Filter: Only include users active within the past year
 -- Rationale: Users inactive >1 year are already lost; including them adds noise
 WHERE ub.days_since_last_order < 365;
+
+
+-- Add additional features as needed
