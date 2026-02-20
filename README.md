@@ -28,3 +28,11 @@ In e-commerce, acquiring a new customer is 5x more expensive than retaining an e
 
 1. **Install Dependencies:** `pip install -r requirements.txt`
 2. **Run the App:** `streamlit run src/app.py`
+
+---
+
+## References
+
+<!-- TODO: add references -->
+
+-
