@@ -17,6 +17,12 @@
  */
 
 
+-- TODO:
+-- 1. Clearly define the "Objective"
+-- 2. Determine the target variable & definition of "Churn"
+-- 3. EDA
+-- 4. Add additional features as needed
+
 -- =============================================================================
 -- CTE 1: TRANSACTIONAL FEATURES (RFM + Returns)
 -- Source: order_items table
@@ -160,4 +166,3 @@ LEFT JOIN future_purchases fp ON ub.user_id = fp.user_id
 WHERE ub.days_since_last_order < 365;
 
 
--- Add additional features as needed
