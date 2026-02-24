@@ -9,3 +9,6 @@ google-cloud-bigquery
 db-dtypes
 streamlit
 watchdog
+lifetimes
+plotly
+scipy
