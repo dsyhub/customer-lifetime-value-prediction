@@ -75,3 +75,6 @@ LEFT JOIN future_purchases f ON u.user_id = f.user_id
 -- Filter: Only train on users who were active within the last year
 -- This removes "ancient" users who churned 5 years ago, keeping the model focused on recent behavior
 WHERE u.days_since_last_order < 365;
+
+
+-- Additional features for a more comprehensive model
