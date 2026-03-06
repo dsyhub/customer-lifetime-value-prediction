@@ -1,11 +1,12 @@
 /*
-  CLV Feature Engineering: BG/NBD + Gamma-Gamma Inputs
+  CLV Feature Engineering: Customer-Level Purchase History + Engagement Features
 
   Computes customer-level features for Customer Lifetime Value (CLV) prediction
-  using the Buy-Till-You-Die (BG/NBD) and Gamma-Gamma probabilistic models.
+  using a two-stage model: (1) purchase propensity classifier, (2) spend-tier
+  expected revenue, combined as CLV = P(purchase) x E[revenue | purchase].
 
   Data Sources:
-    - order_items: Transaction history (BG/NBD inputs + holdout labels)
+    - order_items: Transaction history (purchase features + holdout labels)
     - users:       Demographics and acquisition channel
     - events:      Behavioral engagement signals
 
@@ -14,7 +15,7 @@
     @calibration_end:   End of calibration period (model training cutoff) → 2025-04-04
                         (cutoff_date minus 180 days)
 
-  BG/NBD Core Inputs (computed at calibration_end):
+  Purchase History Features (computed at calibration_end):
     frequency      = total distinct orders - 1   (repeat purchases; 0 = one-time buyer)
     recency        = days from first to last purchase within calibration period
     T              = days from first purchase to calibration_end (customer age)
@@ -67,7 +68,7 @@ calibration_stats AS (
 
     -- BG/NBD inputs
     DATE_DIFF(@calibration_end, MIN(order_date), DAY) AS T,          -- customer age
-    DATE_DIFF(MAX(order_date), MIN(order_date), DAY)  AS recency,    -- first→last purchase
+    DATE_DIFF(MAX(order_date), MIN(order_date), DAY)  AS recency,    -- first→last purchase 
     DATE_DIFF(@calibration_end, MAX(order_date), DAY) AS days_since_last_order
 
   FROM calibration_order_level
@@ -194,7 +195,7 @@ SELECT
   COALESCE(ue.purchase_events,         0)   AS purchase_events
 
 FROM calibration_stats cs
-LEFT JOIN repeat_monetary   rm ON cs.user_id = rm.user_id
+LEFT JOIN repeat_monetary    rm ON cs.user_id = rm.user_id
 LEFT JOIN holdout_stats      hs ON cs.user_id = hs.user_id
 LEFT JOIN user_demographics  ud ON cs.user_id = ud.user_id
 LEFT JOIN user_engagement    ue ON cs.user_id = ue.user_id
