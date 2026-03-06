@@ -1,82 +1,82 @@
 # Customer Lifetime Value Prediction
 
-A probabilistic CLV model predicting **12-month revenue per customer** using the BG/NBD + Gamma-Gamma framework, validated with a 180-day temporal holdout, and operationalized into a 4-tier segmentation and campaign ROI tool.
+A two-stage CLV model predicting **12-month revenue per customer** using purchase propensity classification + spend-tier expected revenue, validated with a 180-day temporal holdout, and operationalized into a 4-tier segmentation and campaign ROI tool.
 
-**Data:** Google BigQuery [TheLook E-Commerce](https://console.cloud.google.com/marketplace/product/bigquery-public-data/thelook-ecommerce) public dataset (~30K customers)
+**Data:** Google BigQuery [TheLook E-Commerce](https://console.cloud.google.com/marketplace/product/bigquery-public-data/thelook-ecommerce) public dataset (~52K customers)
 
 ---
 
 ## Why CLV Over Binary Churn
 
-| Dimension | Binary Churn Model | This CLV Model |
-|-----------|-------------------|----------------|
-| Output | Will they buy again? (yes/no) | How much will they spend? ($) |
-| Business use | Retention trigger | Budget allocation + campaign ROI |
-| Baseline difficulty | PR-AUC ≈ 0.16 (barely above naive) | Probabilistic with interpretable params |
-| Segmentation | Binary risk tier | 4 tiers with dollar-denominated value |
+| Dimension           | Binary Churn Model                 | This CLV Model                          |
+| ------------------- | ---------------------------------- | --------------------------------------- |
+| Output              | Will they buy again? (yes/no)      | How much will they spend? ($)           |
+| Business use        | Retention trigger                  | Budget allocation + campaign ROI        |
+| Baseline difficulty | PR-AUC ≈ 0.16 (barely above naive) | Two-stage with interpretable components |
+| Segmentation        | Binary risk tier                   | 4 tiers with dollar-denominated value   |
 
 ---
 
 ## Technical Approach
 
-### Framework: BG/NBD + Gamma-Gamma
+### Framework: Two-Stage Purchase Propensity + CLV
 
-The **Beta-Geometric / Negative Binomial Distribution (BG/NBD)** model predicts future purchase frequency by jointly modeling:
-- Each customer's latent purchase rate (Poisson process with gamma heterogeneity)
-- Dropout probability (beta-geometric process)
+**Stage 1 — Purchase Propensity (Classification):**
+XGBoost classifier predicting whether a customer will purchase in the holdout window. Handles class imbalance (12.3% positive) with `scale_pos_weight` + isotonic probability calibration.
 
-The **Gamma-Gamma** model predicts average transaction value, conditional on being an active buyer.
+**Stage 2 — Expected Revenue (Spend Tiers):**
+Customers are binned by historical `monetary_value` into spend tiers (terciles). Each tier maps to the average holdout revenue per buyer within that tier. Individual-level regression was attempted but produced negative R² — revenue per transaction is inherently noisy.
 
-**CLV = predicted_purchases_12m × expected_avg_spend**
+**CLV = P(purchase) × E[revenue | purchase]**
 
 ### Key Design Decisions
 
-1. **One-time buyers (~88%) are NOT filtered out** — BG/NBD handles them natively; their low CLV output is the correct, informative answer
-2. **Gamma-Gamma fallback for one-time buyers** — use observed `avg_order_value` rather than exclude them from CLV calculation
-3. **Undiscounted CLV** for main output (simpler stakeholder communication)
+1. **One-time buyers (~69%) are NOT filtered out** — they receive low `p_purchase` scores, which is the correct signal
+2. **Spend-tier revenue over individual regression** — R² = -0.03 on individual regression; tier averages provide meaningful differentiation without overfitting
+3. **Isotonic probability calibration** — `scale_pos_weight` distorts raw probabilities; calibration restores them to match true positive rates
 4. **Temporal holdout = 180 days** — long enough to capture meaningful re-purchase signal in fashion e-commerce
-5. **XGBoost complement** — adds engagement signals (sessions, cart events) that the probabilistic model ignores; provides feature importance and a second CLV estimate
+5. **Undiscounted CLV** for main output (simpler stakeholder communication)
 
 ### Data Split
 
 ```
-Calibration period   ← features computed here
+Calibration period   <- features computed here
 ▐████████████████████████▌  2025-04-04
-                             ▐█████████▌  ← holdout validation
+                             ▐█████████▌  <- holdout validation
                                           2025-10-01 (cutoff)
 ```
 
 ---
 
-## BG/NBD Inputs
+## Model Inputs
 
-| Feature | Definition |
-|---------|------------|
-| `frequency` | Repeat purchases = total_orders − 1 |
-| `recency` | Days from first to last purchase (calibration period) |
-| `T` | Customer age in days at calibration end |
-| `monetary_value` | Avg revenue per repeat transaction |
+| Feature Group    | Features                                                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Purchase History | `frequency`, `recency`, `T`, `monetary_value`, `total_orders`, `avg_order_value`, `days_since_last_order`                 |
+| Demographics     | `customer_tenure_days`, `age`, `gender`, `traffic_source`, `country`                                                      |
+| Engagement       | `total_sessions`, `total_events`, `days_since_last_visit`, `avg_events_per_session`, `cart_events`, `product_view_events` |
+| Derived          | `recency_ratio` (recency / T)                                                                                             |
 
 ---
 
 ## 4-Tier Segmentation
 
-| Segment | Definition | Budget/Customer | Action |
-|---------|------------|-----------------|--------|
-| **High Value** | Top 20% CLV | $0 (organic) | Protect margin — no discounts |
-| **Growing** | Middle 40% + p_alive ≥ 0.3 | $15 | Personalized offers |
-| **At-Risk** | p_alive < 0.3 (any CLV) | $10 | Win-back campaign |
-| **Low Value** | Bottom 40% + p_alive ≥ 0.3 | $2 (email) | Email-only |
+| Segment        | Definition                      | Budget/Customer | Action                        |
+| -------------- | ------------------------------- | --------------- | ----------------------------- |
+| **High Value** | Top 20% CLV                     | $0 (organic)    | Protect margin — no discounts |
+| **Growing**    | Middle 40% + p_purchase >= 0.05 | $15             | Personalized offers           |
+| **At-Risk**    | p_purchase < 0.05 (any CLV)     | $10             | Win-back campaign             |
+| **Low Value**  | Bottom 40% + p_purchase >= 0.05 | $2 (email)      | Email-only                    |
 
 ---
 
 ## Validation Checklist
 
-- [ ] BG/NBD converges (all params positive, reasonable SEs)
-- [ ] Gamma-Gamma: freq/monetary correlation < 0.3
-- [ ] Lift curve: top 20% CLV captures ≥50% of holdout revenue
-- [ ] `plot_period_transactions` bars align with actuals
+- [ ] Purchase propensity PR-AUC significantly above baseline (0.123)
+- [ ] Calibration curve: predicted probabilities match actual rates
+- [ ] Lift curve: top 20% CLV captures disproportionate holdout revenue
 - [ ] One-time buyer CLV < repeat buyer CLV (sanity check)
+- [ ] Total predicted CLV within reasonable range of actual holdout revenue
 
 ---
 
@@ -95,12 +95,12 @@ Requires a Google Cloud account with BigQuery access and the `GOOGLE_APPLICATION
 Run notebooks in order:
 
 ```
-01_data_extraction.ipynb   → data/raw/clv_data.csv
-02_clv_bgnbd.ipynb         → models/bgnbd_model.pkl, models/gg_model.pkl
-                              data/processed/clv_scored.csv
-03_clv_validation.ipynb    → validation metrics + lift curve
-04_clv_segmentation.ipynb  → models/xgb_clv_model.pkl
-                              data/processed/clv_final.csv
+01_data_extraction.ipynb       -> data/raw/clv_data.csv
+02_purchase_propensity.ipynb   -> models/purchase_propensity_model.pkl
+                                  data/processed/stage1_scored.csv
+03_clv_regression.ipynb        -> data/processed/clv_scored.csv
+04_clv_validation.ipynb        -> validation metrics + lift curve
+05_clv_segmentation.ipynb      -> data/processed/clv_final.csv
 ```
 
 ### Streamlit Dashboard
@@ -112,8 +112,9 @@ streamlit run src/app.py
 **Tab 1 — Portfolio Overview:** Segment breakdown (pie + bar charts), KPI cards, segment profile table
 
 **Tab 2 — Single Customer:**
+
 - Mode A: look up existing customer by ID
-- Mode B: manual BG/NBD input entry → live CLV inference + segment classification
+- Mode B: manual feature entry -> live CLV inference + segment classification
 
 ---
 
@@ -122,23 +123,25 @@ streamlit run src/app.py
 ```
 ├── data/
 │   ├── raw/
-│   │   └── clv_data.csv           # BG/NBD inputs + holdout labels
+│   │   └── clv_data.csv               # Purchase history + engagement + holdout labels
 │   └── processed/
-│       ├── clv_scored.csv         # + p_alive, predicted purchases, CLV
-│       └── clv_final.csv          # + segment, XGBoost CLV
+│       ├── stage1_scored.csv          # + p_purchase
+│       ├── clv_scored.csv             # + spend_tier, expected_revenue, clv_180d, clv_12m
+│       └── clv_final.csv              # + segment assignments
 ├── models/
-│   ├── bgnbd_model.pkl            # Fitted BG/NBD model
-│   ├── gg_model.pkl               # Fitted Gamma-Gamma model
-│   └── xgb_clv_model.pkl          # XGBoost CLV regressor
+│   ├── purchase_propensity_model.pkl  # Calibrated XGBoost classifier
+│   └── label_encoders.pkl             # LabelEncoders for categorical features
 ├── notebooks/
-│   ├── 01_data_extraction.ipynb   # BigQuery → clv_data.csv
-│   ├── 02_clv_bgnbd.ipynb         # BG/NBD + Gamma-Gamma fitting
-│   ├── 03_clv_validation.ipynb    # Temporal holdout backtesting
-│   └── 04_clv_segmentation.ipynb  # Segmentation + campaign ROI
+│   ├── 01_data_extraction.ipynb       # BigQuery -> clv_data.csv
+│   ├── 02_purchase_propensity.ipynb   # Stage 1: purchase propensity classifier
+│   ├── 03_clv_regression.ipynb        # Stage 2: spend-tier revenue + combined CLV
+│   ├── 04_clv_validation.ipynb        # Temporal holdout backtesting
+│   ├── 05_clv_segmentation.ipynb      # 4-tier segmentation + campaign ROI
+│   └── archive/                       # Legacy BG/NBD notebooks (for reference)
 ├── sql/
-│   └── clv_features.sql           # Parameterized BG/NBD feature SQL
+│   └── clv_features.sql               # Parameterized feature extraction SQL
 ├── src/
-│   └── app.py                     # Streamlit CLV dashboard
+│   └── app.py                         # Streamlit CLV dashboard
 └── requirements.txt
 ```
 
@@ -146,6 +149,5 @@ streamlit run src/app.py
 
 ## References
 
-- Fader, P.S., Hardie, B.G.S., & Lee, K.L. (2005). ["Counting Your Customers" the Easy Way: An Alternative to the Pareto/NBD Model.](https://www.jstor.org/stable/30036675) *Marketing Science*, 24(2), 275–284.
-- Fader, P.S., & Hardie, B.G.S. (2013). [The Gamma-Gamma Model of Monetary Value.](http://www.brucehardie.com/notes/025/gamma_gamma.pdf)
-- [lifetimes Python library](https://lifetimes.readthedocs.io/) — BG/NBD and Gamma-Gamma implementation
+- Chen, T., & Guestrin, C. (2016). [XGBoost: A Scalable Tree Boosting System.](https://arxiv.org/abs/1603.02754) _KDD 2016_.
+- Fader, P.S., Hardie, B.G.S., & Lee, K.L. (2005). ["Counting Your Customers" the Easy Way.](https://www.jstor.org/stable/30036675) _Marketing Science_, 24(2), 275-284. (Background on BG/NBD; see `notebooks/archive/` for initial exploration.)
