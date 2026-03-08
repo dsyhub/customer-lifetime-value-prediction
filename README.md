@@ -2,7 +2,7 @@
 
 A two-stage CLV model predicting **12-month revenue per customer** using purchase propensity classification + spend-tier expected revenue, validated with a 183-day temporal holdout, and operationalized into a 4-tier segmentation and campaign ROI tool.
 
-**Data:** [UCI Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii) — real UK e-commerce transactions (Dec 2009 – Dec 2011, ~4,900 customers after cleaning)
+**Data:** [UCI Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii) — real UK e-commerce transactions (Dec 2009 - Dec 2011, ~4,900 customers after cleaning)
 
 ---
 
@@ -40,11 +40,11 @@ Calibration period   <- features computed here
 
 ## Model Performance
 
-| Metric | Test Set |
-| ------ | -------- |
-| PR-AUC | 0.87 |
-| ROC-AUC | 0.85 |
-| Positive rate | 52% |
+| Metric        | Test Set |
+| ------------- | -------- |
+| PR-AUC        | 0.87     |
+| ROC-AUC       | 0.85     |
+| Positive rate | 52%      |
 
 **Revenue calibration:** Predicted total CLV within 0.3% of actual holdout revenue (ratio: 1.00).
 
@@ -54,23 +54,23 @@ Calibration period   <- features computed here
 
 ## Model Inputs
 
-| Feature Group | Features |
-| ------------- | -------- |
-| Purchase History | `frequency`, `recency`, `T`, `monetary_value`, `total_orders`, `avg_order_value`, `days_since_last_order` |
-| Shopping Behavior | `unique_products`, `avg_basket_size`, `purchase_regularity`, `cancellation_rate`, `days_active` |
-| Geography | `country` |
-| Derived | `recency_ratio` (recency / T) |
+| Feature Group     | Features                                                                                                  |
+| ----------------- | --------------------------------------------------------------------------------------------------------- |
+| Purchase History  | `frequency`, `recency`, `T`, `monetary_value`, `total_orders`, `avg_order_value`, `days_since_last_order` |
+| Shopping Behavior | `unique_products`, `avg_basket_size`, `purchase_regularity`, `cancellation_rate`, `days_active`           |
+| Geography         | `country`                                                                                                 |
+| Derived           | `recency_ratio` (recency / T)                                                                             |
 
 ---
 
 ## 4-Tier Segmentation
 
-| Segment | Definition | Count | Budget/Customer | Action |
-| ------- | ---------- | ----- | --------------- | ------ |
-| **High Value** | Top 20% CLV | 984 (20%) | $0 (organic) | Protect margin — no discounts |
-| **Growing** | Middle 40% + p_purchase >= 0.20 | 1,850 (38%) | $15 | Personalized offers |
-| **At-Risk** | p_purchase < 0.20 (any CLV) | 957 (19%) | $10 | Win-back campaign |
-| **Low Value** | Bottom 40% + p_purchase >= 0.20 | 1,127 (23%) | $2 (email) | Email-only |
+| Segment        | Definition                      | Count       | Budget/Customer | Action                        |
+| -------------- | ------------------------------- | ----------- | --------------- | ----------------------------- |
+| **High Value** | Top 20% CLV                     | 984 (20%)   | $0 (organic)    | Protect margin — no discounts |
+| **Growing**    | Middle 40% + p_purchase >= 0.20 | 1,850 (38%) | $15             | Personalized offers           |
+| **At-Risk**    | p_purchase < 0.20 (any CLV)     | 957 (19%)   | $10             | Win-back campaign             |
+| **Low Value**  | Bottom 40% + p_purchase >= 0.20 | 1,127 (23%) | $2 (email)      | Email-only                    |
 
 ---
 
@@ -87,12 +87,10 @@ pip install -r requirements.txt
 Run notebooks in order:
 
 ```
-01_data_extraction.ipynb       -> data/raw/clv_data.csv
-02_purchase_propensity.ipynb   -> models/purchase_propensity_model.pkl
-                                  data/processed/stage1_scored.csv
-03_clv_regression.ipynb        -> data/processed/clv_scored.csv
-04_clv_validation.ipynb        -> validation metrics + lift curve
-05_clv_segmentation.ipynb      -> data/processed/clv_final.csv
+01_data_and_model.ipynb            -> data/raw/clv_data.csv
+                                      models/purchase_propensity_model.pkl
+                                      data/processed/stage1_scored.csv
+02_clv_and_segmentation.ipynb      -> data/processed/clv_final.csv
 ```
 
 ### Streamlit Dashboard
@@ -119,18 +117,14 @@ streamlit run src/app.py
 │   │   └── online_retail_II.xlsx       # UCI source data
 │   └── processed/
 │       ├── stage1_scored.csv          # + p_purchase
-│       ├── clv_scored.csv             # + spend_tier, expected_revenue, clv_180d, clv_12m
-│       └── clv_final.csv              # + segment assignments
+│       └── clv_final.csv              # + spend_tier, CLV, segment assignments
 ├── models/
 │   ├── purchase_propensity_model.pkl  # Calibrated XGBoost classifier
 │   └── label_encoders.pkl             # LabelEncoders for categorical features
 ├── notebooks/
-│   ├── 01_data_extraction.ipynb       # UCI data → clv_data.csv
-│   ├── 02_purchase_propensity.ipynb   # Stage 1: 4-model comparison + Optuna tuning
-│   ├── 03_clv_regression.ipynb        # Stage 2: spend-tier revenue + combined CLV
-│   ├── 04_clv_validation.ipynb        # Temporal holdout backtesting
-│   ├── 05_clv_segmentation.ipynb      # 4-tier segmentation + campaign ROI
-│   └── archive/                       # Legacy BG/NBD notebooks (for reference)
+│   ├── 01_data_and_model.ipynb        # Data extraction + Stage 1 classifier
+│   ├── 02_clv_and_segmentation.ipynb  # CLV scoring + validation + segmentation
+│   └── archive/                       # Legacy notebooks (for reference)
 ├── sql/
 │   └── archive/                       # Legacy TheLook SQL (for reference)
 ├── src/
@@ -142,7 +136,7 @@ streamlit run src/app.py
 
 ## Limitations
 
-- **Dataset age:** UCI Online Retail II covers Dec 2009 – Dec 2011. E-commerce behavior has shifted significantly since then (mobile, social commerce, subscription models). The methodology is transferable but the specific model coefficients would not generalize to modern data.
+- **Dataset age:** UCI Online Retail II covers Dec 2009 - Dec 2011. E-commerce behavior has shifted significantly since then (mobile, social commerce, subscription models). The methodology is transferable but the specific model coefficients would not generalize to modern data.
 - **No engagement data:** Unlike modern e-commerce platforms, this dataset lacks browsing behavior, session data, cart abandonment, and email engagement signals. These features typically improve purchase propensity models.
 - **UK-centric:** ~90% of transactions are from the UK. Country-level features have limited variation, and the model may not generalize well to geographically diverse customer bases.
 - **B2B component:** The dataset contains a mix of retail and wholesale (bulk) transactions. Some "customers" are businesses placing large orders, which inflates monetary values and complicates segmentation.

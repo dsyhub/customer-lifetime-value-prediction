@@ -110,10 +110,8 @@ with tab1:
     if df is None:
         st.warning(
             "No portfolio data found. Run the notebook pipeline first:\n\n"
-            "1. `01_data_extraction.ipynb` → generates `data/raw/clv_data.csv`\n"
-            "2. `02_purchase_propensity.ipynb` → Stage 1 classifier\n"
-            "3. `03_clv_regression.ipynb` → Stage 2 revenue + combined CLV\n"
-            "4. `05_clv_segmentation.ipynb` → generates `data/processed/clv_final.csv`"
+            "1. `01_data_and_model.ipynb` → data extraction + Stage 1 classifier\n"
+            "2. `02_clv_and_segmentation.ipynb` → CLV scoring + segmentation → `clv_final.csv`"
         )
         st.stop()
 
@@ -305,7 +303,7 @@ with tab2:
         clf, encoders = load_models()
         if clf is None:
             st.warning(
-                "Models not found. Run `02_purchase_propensity.ipynb` to generate:\n"
+                "Models not found. Run `01_data_and_model.ipynb` to generate:\n"
                 "- `models/purchase_propensity_model.pkl`\n"
                 "- `models/label_encoders.pkl`"
             )
