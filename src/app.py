@@ -47,7 +47,8 @@ SEGMENT_CONFIG = {
 
 CLV_TOP20_PCT = 0.80  # CLV percentile threshold for High Value
 CLV_BOTTOM40_PCT = 0.40  # CLV percentile threshold for Low Value
-P_PURCHASE_THRESHOLD = 0.05  # p_purchase cutoff for At-Risk
+P_PURCHASE_THRESHOLD = 0.20  # p_purchase cutoff for At-Risk (base rate ~52%)
+HOLDOUT_DAYS = 183  # Calibration → cutoff window length
 
 
 # ---------------------------------------------------------------------------
@@ -92,8 +93,9 @@ st.set_page_config(
 
 st.title("Customer Lifetime Value Dashboard")
 st.caption(
-    "Two-stage CLV model (purchase propensity + spend tiers) • TheLook E-Commerce • "
-    "Calibration: before 2025-04-04 | Holdout: 2025-04-04 → 2025-10-01"
+    "Two-stage CLV model (purchase propensity + spend tiers) · "
+    "UCI Online Retail II · "
+    "Calibration: before 2011-06-09 | Holdout: 2011-06-09 → 2011-12-09"
 )
 
 tab1, tab2 = st.tabs(["📊 Portfolio Overview", "🔍 Single Customer"])
@@ -139,11 +141,6 @@ with tab1:
 
         # Ensure consistent order
         seg_order = ["High Value", "Growing", "At-Risk", "Low Value"]
-        seg_colors = [
-            SEGMENT_CONFIG[s]["color"]
-            for s in seg_order
-            if s in seg_counts["segment"].values
-        ]
         seg_counts["segment"] = pd.Categorical(
             seg_counts["segment"], categories=seg_order, ordered=True
         )
@@ -285,6 +282,12 @@ with tab2:
                         "total_orders",
                         "avg_order_value",
                         "days_since_last_order",
+                        "unique_products",
+                        "avg_basket_size",
+                        "purchase_regularity",
+                        "cancellation_rate",
+                        "days_active",
+                        "country",
                         "p_purchase",
                         "spend_tier",
                         "expected_revenue_if_purchase",
@@ -323,24 +326,26 @@ with tab2:
         else:
             top20_threshold = 100.0
             bottom40_threshold = 20.0
-            tier_avg_map = {"Low Spend": 50.0, "Mid Spend": 90.0, "High Spend": 150.0}
+            tier_avg_map = {"Low Spend": 50.0, "Mid Spend": 500.0, "High Spend": 2000.0}
 
         st.markdown("Enter customer features to score:")
 
+        # --- Purchase history features ---
         col1, col2 = st.columns(2)
         with col1:
+            st.markdown("**Purchase History**")
             frequency = st.number_input(
                 "Frequency (repeat purchases)",
                 min_value=0,
-                max_value=100,
-                value=2,
+                max_value=500,
+                value=3,
                 help="Total orders minus 1 (0 = one-time buyer)",
             )
             recency = st.number_input(
                 "Recency (days, first → last purchase)",
                 min_value=0,
                 max_value=3650,
-                value=90,
+                value=120,
                 help="Days from first to last purchase",
             )
             T = st.number_input(
@@ -351,30 +356,78 @@ with tab2:
                 help="Days from first purchase to calibration end",
             )
             monetary_value = st.number_input(
-                "Monetary Value (avg $ per transaction)",
+                "Monetary Value (avg £ per transaction)",
                 min_value=0.01,
-                max_value=10000.0,
-                value=60.0,
-                help="Average order value",
+                max_value=50000.0,
+                value=350.0,
+                help="Average order value on repeat transactions",
             )
-        with col2:
             total_orders = st.number_input(
-                "Total Orders", min_value=1, max_value=100, value=3
+                "Total Orders", min_value=1, max_value=500, value=4
             )
             avg_order_value = st.number_input(
-                "Avg Order Value ($)", min_value=0.01, max_value=10000.0, value=60.0
+                "Avg Order Value (£)", min_value=0.01, max_value=50000.0, value=350.0
             )
             days_since_last_order = st.number_input(
-                "Days Since Last Order", min_value=0, max_value=3650, value=90
+                "Days Since Last Order", min_value=0, max_value=3650, value=60
             )
-            age = st.number_input("Age", min_value=12, max_value=100, value=35)
+
+        with col2:
+            st.markdown("**Shopping Behavior**")
+            unique_products = st.number_input(
+                "Unique Products Purchased",
+                min_value=1,
+                max_value=5000,
+                value=50,
+                help="Distinct product codes (StockCodes) ordered",
+            )
+            avg_basket_size = st.number_input(
+                "Avg Basket Size (items/order)",
+                min_value=0.1,
+                max_value=1000.0,
+                value=20.0,
+                help="Average number of items per order",
+            )
+            purchase_regularity = st.number_input(
+                "Purchase Regularity (std dev of inter-purchase days)",
+                min_value=0.0,
+                max_value=500.0,
+                value=30.0,
+                help="Lower = more regular purchasing pattern (0 for ≤ 2 orders)",
+            )
+            cancellation_rate = st.number_input(
+                "Cancellation Rate",
+                min_value=0.0,
+                max_value=1.0,
+                value=0.05,
+                step=0.01,
+                help="Proportion of invoices that were cancellations",
+            )
+            days_active = st.number_input(
+                "Days Active",
+                min_value=0,
+                max_value=3650,
+                value=120,
+                help="Days between first and last purchase",
+            )
+
+            # Country dropdown using actual encoder classes
+            country_list = list(encoders["country"].classes_)
+            default_idx = country_list.index("United Kingdom") if "United Kingdom" in country_list else 0
+            country = st.selectbox("Country", country_list, index=default_idx)
 
         if recency > T:
             st.error(f"Recency ({recency}) cannot exceed T ({T}). Please adjust.")
             st.stop()
 
         if st.button("Score Customer", type="primary"):
-            # Build feature vector
+            # Encode country
+            country_enc = encoders["country"].transform([country])[0]
+
+            # Derived feature
+            recency_ratio = recency / T if T > 0 else 0
+
+            # Build feature vector (must match model training order)
             features = {
                 "frequency": frequency,
                 "recency": recency,
@@ -383,18 +436,13 @@ with tab2:
                 "total_orders": total_orders,
                 "avg_order_value": avg_order_value,
                 "days_since_last_order": days_since_last_order,
-                "customer_tenure_days": T,
-                "age": age,
-                "total_sessions": 5,
-                "total_events": 20,
-                "days_since_last_visit": days_since_last_order,
-                "avg_events_per_session": 4.0,
-                "cart_events": 2,
-                "product_view_events": 10,
-                "recency_ratio": recency / T if T > 0 else 0,
-                "gender_enc": 0,
-                "traffic_source_enc": 0,
-                "country_enc": 0,
+                "unique_products": unique_products,
+                "avg_basket_size": avg_basket_size,
+                "purchase_regularity": purchase_regularity,
+                "cancellation_rate": cancellation_rate,
+                "days_active": days_active,
+                "recency_ratio": recency_ratio,
+                "country_enc": country_enc,
             }
             X_input = pd.DataFrame([features])
 
@@ -416,11 +464,11 @@ with tab2:
             else:
                 spend_tier = "Mid Spend"
 
-            expected_rev = tier_avg_map.get(spend_tier, 90.0)
+            expected_rev = tier_avg_map.get(spend_tier, 500.0)
 
             # Combined CLV
             clv_180d = p_purchase * expected_rev
-            clv_12m = clv_180d * (365 / 180)
+            clv_12m = clv_180d * (365 / HOLDOUT_DAYS)
 
             # Segment
             segment = classify_segment(

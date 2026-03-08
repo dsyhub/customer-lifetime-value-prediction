@@ -4,9 +4,10 @@ matplotlib
 seaborn
 scikit-learn
 xgboost
+lightgbm
+optuna
 joblib
-google-cloud-bigquery
-db-dtypes
+openpyxl
 streamlit
 watchdog
 plotly
