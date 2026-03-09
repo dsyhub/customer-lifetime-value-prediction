@@ -111,7 +111,7 @@ with tab1:
         st.warning(
             "No portfolio data found. Run the notebook pipeline first:\n\n"
             "1. `01_data_and_model.ipynb` → data extraction + Stage 1 classifier\n"
-            "2. `02_clv_and_segmentation.ipynb` → CLV scoring + segmentation → `clv_final.csv`"
+            "2. `03_customer_lifetime_value_segmentation.ipynb` → CLV scoring + segmentation → `clv_final.csv`"
         )
         st.stop()
 
@@ -411,7 +411,11 @@ with tab2:
 
             # Country dropdown using actual encoder classes
             country_list = list(encoders["country"].classes_)
-            default_idx = country_list.index("United Kingdom") if "United Kingdom" in country_list else 0
+            default_idx = (
+                country_list.index("United Kingdom")
+                if "United Kingdom" in country_list
+                else 0
+            )
             country = st.selectbox("Country", country_list, index=default_idx)
 
         if recency > T:

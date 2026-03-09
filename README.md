@@ -1,12 +1,33 @@
-# Customer Lifetime Value Prediction
+# Retention Propensity Model
 
 A two-stage CLV model predicting **12-month revenue per customer** using purchase propensity classification + spend-tier expected revenue, validated with a 183-day temporal holdout, and operationalized into a 4-tier segmentation and campaign ROI tool.
 
-**Data:** [UCI Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii) — real UK e-commerce transactions (Dec 2009 - Dec 2011, ~4,900 customers after cleaning)
-
 ---
 
-## Technical Approach
+## 1. Project Overview
+
+Customer churn is one of the most costly challenges in e-commerce - acquiring a new customer costs 5-7x more than retaining an existing one. This project moves beyond binary churn prediction to answer a more actionable question:
+
+> **Which customers are worth saving, and how much should we spend to save them?**
+
+Using transactional data from a real e-commerce dataset, I built a retention propensity model that segments customers into three tiers, each with distinct intervention strategies and expected ROI.
+
+This project tackles two main tasks:
+
+- **Purchase Propensity (Classification):** Using classification algorithms to predict whether a customer will make a repeat purchase in the near future → `P(purchase)`.
+- **Expected Revenue (Spend Tiers):** Using regression models to predict the monetary values per customer in each spend tier → `CLV = P(purchase) x E[revenue | purchase]`
+
+## 2. Key Results
+
+## 3. Data
+
+- **Source:** [UCI Machine Learning Repository - Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii)
+- **Size:** 500,000+ UK-based e-commerce transactions (~4,900 customers after cleaning)
+- **Period:** 2009-2011
+- **Key Features:** Recency, frequency, monetary value (RFM), session behavior, purchase cadence, category diversity, return rate
+- **Target Variable:** Binary churn label (_[define your churn window, e.g., "no purchase in 90 days"]_)
+
+## 4. Methodology
 
 ### Framework: Two-Stage Purchase Propensity + CLV
 
@@ -87,10 +108,11 @@ pip install -r requirements.txt
 Run notebooks in order:
 
 ```
-01_data_and_model.ipynb            -> data/raw/clv_data.csv
-                                      models/purchase_propensity_model.pkl
-                                      data/processed/stage1_scored.csv
-02_clv_and_segmentation.ipynb      -> data/processed/clv_final.csv
+01_exploratory_data_analysis.ipynb                  -> data/raw/clv_data.csv
+                                                      models/purchase_propensity_model.pkl
+                                                      data/processed/stage1_scored.csv
+02_purchase_propensity_model.ipynb
+03_customer_lifetime_value_segmentation.ipynb       -> data/processed/clv_final.csv
 ```
 
 ### Streamlit Dashboard
@@ -114,7 +136,7 @@ streamlit run src/app.py
 ├── data/
 │   ├── raw/
 │   │   ├── clv_data.csv               # RFM + transaction + holdout labels
-│   │   └── online_retail_II.xlsx       # UCI source data
+│   │   └── online_retail_II.xlsx      # UCI source data
 │   └── processed/
 │       ├── stage1_scored.csv          # + p_purchase
 │       └── clv_final.csv              # + spend_tier, CLV, segment assignments
@@ -122,11 +144,9 @@ streamlit run src/app.py
 │   ├── purchase_propensity_model.pkl  # Calibrated XGBoost classifier
 │   └── label_encoders.pkl             # LabelEncoders for categorical features
 ├── notebooks/
-│   ├── 01_data_and_model.ipynb        # Data extraction + Stage 1 classifier
-│   ├── 02_clv_and_segmentation.ipynb  # CLV scoring + validation + segmentation
-│   └── archive/                       # Legacy notebooks (for reference)
-├── sql/
-│   └── archive/                       # Legacy TheLook SQL (for reference)
+│   ├── 01_exploratory_data_analysis.ipynb                 # Data extraction + Stage 1 classifier
+│   ├── 02_purchase_propensity_model.ipynb                 #
+│   └── 03_customer_lifetime_value_segmentation.ipynb      # CLV scoring + validation + segmentation
 ├── src/
 │   └── app.py                         # Streamlit CLV dashboard
 └── requirements.txt
