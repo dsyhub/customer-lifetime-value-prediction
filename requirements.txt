@@ -12,3 +12,4 @@ streamlit
 watchdog
 plotly
 scipy
+shap

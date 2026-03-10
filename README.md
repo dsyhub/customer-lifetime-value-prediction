@@ -4,6 +4,9 @@ A two-stage CLV model predicting **12-month revenue per customer** using purchas
 
 ---
 
+<!-- TODO: Consider adding a brief README.md to the project repo that summarizes the full pipeline in 10 lines, shows the project structure, and links to each notebook. Portfolio reviewers often skim the README before deciding whether to open notebooks.
+ -->
+
 ## 1. Project Overview
 
 Customer churn is one of the most costly challenges in e-commerce - acquiring a new customer costs 5-7x more than retaining an existing one. This project moves beyond binary churn prediction to answer a more actionable question:

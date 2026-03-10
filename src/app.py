@@ -279,12 +279,10 @@ with tab2:
                         "monetary_value",
                         "total_orders",
                         "avg_order_value",
-                        "days_since_last_order",
                         "unique_products",
                         "avg_basket_size",
                         "purchase_regularity",
                         "cancellation_rate",
-                        "days_active",
                         "country",
                         "p_purchase",
                         "spend_tier",
@@ -340,11 +338,11 @@ with tab2:
                 help="Total orders minus 1 (0 = one-time buyer)",
             )
             recency = st.number_input(
-                "Recency (days, first → last purchase)",
+                "Recency (days since last order)",
                 min_value=0,
                 max_value=3650,
-                value=120,
-                help="Days from first to last purchase",
+                value=60,
+                help="Days from last purchase to calibration end",
             )
             T = st.number_input(
                 "T (customer age in days)",
@@ -365,9 +363,6 @@ with tab2:
             )
             avg_order_value = st.number_input(
                 "Avg Order Value (£)", min_value=0.01, max_value=50000.0, value=350.0
-            )
-            days_since_last_order = st.number_input(
-                "Days Since Last Order", min_value=0, max_value=3650, value=60
             )
 
         with col2:
@@ -401,14 +396,6 @@ with tab2:
                 step=0.01,
                 help="Proportion of invoices that were cancellations",
             )
-            days_active = st.number_input(
-                "Days Active",
-                min_value=0,
-                max_value=3650,
-                value=120,
-                help="Days between first and last purchase",
-            )
-
             # Country dropdown using actual encoder classes
             country_list = list(encoders["country"].classes_)
             default_idx = (
@@ -419,7 +406,9 @@ with tab2:
             country = st.selectbox("Country", country_list, index=default_idx)
 
         if recency > T:
-            st.error(f"Recency ({recency}) cannot exceed T ({T}). Please adjust.")
+            st.error(
+                f"Recency ({recency} days since last order) cannot exceed T ({T} customer age). Please adjust."
+            )
             st.stop()
 
         if st.button("Score Customer", type="primary"):
@@ -437,12 +426,10 @@ with tab2:
                 "monetary_value": monetary_value,
                 "total_orders": total_orders,
                 "avg_order_value": avg_order_value,
-                "days_since_last_order": days_since_last_order,
                 "unique_products": unique_products,
                 "avg_basket_size": avg_basket_size,
                 "purchase_regularity": purchase_regularity,
                 "cancellation_rate": cancellation_rate,
-                "days_active": days_active,
                 "recency_ratio": recency_ratio,
                 "country_enc": country_enc,
             }
