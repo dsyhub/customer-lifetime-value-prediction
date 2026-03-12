@@ -57,7 +57,7 @@ Calibration period   <- features computed here
 | Feature Group     | Features                                                                                                  |
 | ----------------- | --------------------------------------------------------------------------------------------------------- |
 | Purchase History  | `frequency`, `recency`, `T`, `monetary_value`, `total_orders`, `avg_order_value`, `days_since_last_order` |
-| Shopping Behavior | `unique_products`, `avg_basket_size`, `purchase_regularity`, `cancellation_rate`, `days_active`           |
+| Shopping Behavior | `unique_products`, `avg_basket_size`, `interpurchase_std`, `cancellation_rate`, `days_active`           |
 | Geography         | `country`                                                                                                 |
 | Derived           | `recency_ratio` (recency / T)                                                                             |
 

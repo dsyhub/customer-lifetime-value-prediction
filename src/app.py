@@ -281,7 +281,7 @@ with tab2:
                         "avg_order_value",
                         "unique_products",
                         "avg_basket_size",
-                        "purchase_regularity",
+                        "interpurchase_std",
                         "cancellation_rate",
                         "country",
                         "p_purchase",
@@ -381,12 +381,12 @@ with tab2:
                 value=20.0,
                 help="Average number of items per order",
             )
-            purchase_regularity = st.number_input(
-                "Purchase Regularity (std dev of inter-purchase days)",
+            interpurchase_std = st.number_input(
+                "Inter-purchase Std Dev (days)",
                 min_value=0.0,
                 max_value=500.0,
                 value=30.0,
-                help="Lower = more regular purchasing pattern (0 for ≤ 2 orders)",
+                help="Std dev of days between orders. Lower = more regular pattern (0 for ≤ 2 orders)",
             )
             cancellation_rate = st.number_input(
                 "Cancellation Rate",
@@ -428,7 +428,7 @@ with tab2:
                 "avg_order_value": avg_order_value,
                 "unique_products": unique_products,
                 "avg_basket_size": avg_basket_size,
-                "purchase_regularity": purchase_regularity,
+                "interpurchase_std": interpurchase_std,
                 "cancellation_rate": cancellation_rate,
                 "recency_ratio": recency_ratio,
                 "country_enc": country_enc,
