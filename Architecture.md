@@ -57,7 +57,7 @@ Calibration period   <- features computed here
 | Feature Group     | Features                                                                                                  |
 | ----------------- | --------------------------------------------------------------------------------------------------------- |
 | Purchase History  | `frequency`, `recency`, `T`, `monetary_value`, `total_orders`, `avg_order_value`, `days_since_last_order` |
-| Shopping Behavior | `unique_products`, `avg_basket_size`, `interpurchase_std`, `cancellation_rate`, `days_active`           |
+| Shopping Behavior | `unique_products`, `avg_basket_size`, `interpurchase_std`, `cancellation_rate`, `days_active`             |
 | Geography         | `country`                                                                                                 |
 | Derived           | `recency_ratio` (recency / T)                                                                             |
 
@@ -87,10 +87,10 @@ pip install -r requirements.txt
 Run notebooks in order:
 
 ```
-01_data_and_model.ipynb            -> data/raw/clv_data.csv
-                                      models/purchase_propensity_model.pkl
-                                      data/processed/stage1_scored.csv
-03_customer_lifetime_value_segmentation.ipynb      -> data/processed/clv_final.csv
+01_exploratory_data_analysis.ipynb             -> data/processed/clv_data.csv
+02_purchase_propensity_model.ipynb             -> models/purchase_propensity_model.pkl
+                                                  data/processed/stage1_scored.csv
+03_customer_lifetime_value_segmentation.ipynb  -> data/processed/clv_final.csv
 ```
 
 ### Streamlit Dashboard

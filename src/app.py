@@ -282,6 +282,7 @@ with tab2:
                         "unique_products",
                         "avg_basket_size",
                         "interpurchase_std",
+                        "is_one_time_buyer",
                         "cancellation_rate",
                         "country",
                         "p_purchase",
@@ -386,7 +387,13 @@ with tab2:
                 min_value=0.0,
                 max_value=500.0,
                 value=30.0,
-                help="Std dev of days between orders. Lower = more regular pattern (0 for ≤ 2 orders)",
+                help="Std dev of days between orders. Lower = more regular pattern (0-fill for one-time buyers)",
+            )
+            is_one_time_buyer = st.selectbox(
+                "One-Time Buyer",
+                [0, 1],
+                index=0,
+                help="1 = customer made only one purchase in calibration period",
             )
             cancellation_rate = st.number_input(
                 "Cancellation Rate",
@@ -429,6 +436,7 @@ with tab2:
                 "unique_products": unique_products,
                 "avg_basket_size": avg_basket_size,
                 "interpurchase_std": interpurchase_std,
+                "is_one_time_buyer": is_one_time_buyer,
                 "cancellation_rate": cancellation_rate,
                 "recency_ratio": recency_ratio,
                 "country_enc": country_enc,
