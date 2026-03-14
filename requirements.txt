@@ -8,3 +8,7 @@ watchdog==6.0.0
 plotly==6.6.0
 scipy==1.17.1
 shap==0.51.0
+lightgbm==4.6.0
+optuna==4.7.0
+matplotlib==3.10.8
+seaborn==0.13.2
