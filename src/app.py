@@ -283,9 +283,11 @@ with tab1:
     total_holdout_rev = df["actual_holdout_revenue"].sum()
     top20_capture = top20_rev / total_holdout_rev if total_holdout_rev > 0 else 0
 
-    # Brier score (full dataset — includes training data)
-    brier = brier_score_loss(df["purchased_in_holdout"], df["p_purchase"])
-    base_rate = df["purchased_in_holdout"].mean()
+    # Brier score on test set only (avoids in-sample bias from training data)
+    test_mask = df["is_test"] if "is_test" in df.columns else pd.Series(True, index=df.index)
+    test_df_brier = df[test_mask]
+    brier = brier_score_loss(test_df_brier["purchased_in_holdout"], test_df_brier["p_purchase"])
+    base_rate = test_df_brier["purchased_in_holdout"].mean()
     brier_baseline = base_rate * (1 - base_rate)
 
     c1, c2, c3, c4 = st.columns(4)

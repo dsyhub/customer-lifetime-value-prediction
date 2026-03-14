@@ -12,8 +12,8 @@ Two-stage machine learning pipeline that predicts which e-commerce customers wil
 
 ## Key Results
 
-- **Top 20% of predicted CLV captures 68.8% of actual holdout revenue** — the model correctly identifies the customers who matter most
-- **Brier score 0.1775** on held-out test data (29% reduction vs. naive baseline), confirming calibrated probabilities feed directly into reliable CLV estimates
+- **Top 20% of predicted CLV captures 68.6% of actual holdout revenue** — the model correctly identifies the customers who matter most
+- **Brier score 0.1764** on held-out test data (29% reduction vs. naive baseline), confirming calibrated probabilities feed directly into reliable CLV estimates
 - **Revenue calibration ratio of 0.895** — total predicted CLV undershoots actual holdout revenue by 10.5%, a conservative and operationally safe bias
 - **4,918 customers scored and segmented into 4 tiers** with differentiated campaign budgets and break-even lift thresholds ready for A/B testing
 
@@ -40,8 +40,8 @@ Two-stage machine learning pipeline that predicts which e-commerce customers wil
 │  (Optuna 50 trials,      │          │  via pooled daily rates  │
 │   isotonic calibration)  │          │                          │
 │                          │          │  Low:  $402/customer     │
-│  PR-AUC: 0.8358          │          │  Mid:  $851/customer     │
-│  Brier:  0.1775          │          │  High: $2,866/customer   │
+│  PR-AUC: 0.8359          │          │  Mid:  $851/customer     │
+│  Brier:  0.1764          │          │  High: $2,866/customer   │
 │                          │          │                          │
 │  Output: P(purchase)     │          │  Output: E[revenue]      │
 └────────────┬─────────────┘          └────────────┬─────────────┘
@@ -59,9 +59,9 @@ Two-stage machine learning pipeline that predicts which e-commerce customers wil
                  │   4-TIER SEGMENTATION    │
                  │                          │
                  │  High Value (20%)  → $5  │
-                 │  Growing   (38%)   → $15 │
-                 │  At-Risk   (14.5%) → $10 │
-                 │  Low Value (27.5%) → $2  │
+                 │  Growing   (37%)   → $15 │
+                 │  At-Risk   (15%)   → $10 │
+                 │  Low Value (28%)   → $2  │
                  └──────────────────────────┘
 ```
 
@@ -71,9 +71,13 @@ Two-stage machine learning pipeline that predicts which e-commerce customers wil
 
 ## Dashboard
 
-> **Screenshot placeholder** — _add dashboard screenshot here_
+[**Live demo →**](https://your-app-url.streamlit.app) · Launch locally with `streamlit run src/app.py`
 
-Launch with `streamlit run src/app.py`
+![Executive Summary](assets/dashboard_executive_summary.png)
+
+|             Customer Explorer              |               Campaign Sensitivity               |
+| :----------------------------------------: | :----------------------------------------------: |
+| ![Explorer](assets/dashboard_explorer.png) | ![Sensitivity](assets/dashboard_sensitivity.png) |
 
 | Tab                      | What it shows                                                                                                                                        |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -149,7 +153,7 @@ Model selection and Optuna tuning optimize **PR-AUC** (discrimination — can th
 
 ### Why Brier score over log loss
 
-Log loss penalizes confident wrong predictions exponentially, which is useful during training (it's XGBoost's implicit loss). But for CLV, we care about **average probability accuracy across the portfolio**, not worst-case confidence. Brier score measures mean squared error of probabilities — directly interpretable as "how far off are our purchase probability estimates, on average?" The test-set Brier of 0.1775 vs. naive baseline of 0.2496 means the model reduces probability error by 29% (Brier Skill Score).
+Log loss penalizes confident wrong predictions exponentially, which is useful during training (it's XGBoost's implicit loss). But for CLV, we care about **average probability accuracy across the portfolio**, not worst-case confidence. Brier score measures mean squared error of probabilities — directly interpretable as "how far off are our purchase probability estimates, on average?" The test-set Brier of 0.1764 vs. naive baseline of 0.2496 means the model reduces probability error by 29% (Brier Skill Score).
 
 ### Segmentation cascade and the At-Risk tradeoff
 
@@ -160,7 +164,7 @@ Segments are assigned via priority-ordered rules, not simple CLV quartiles:
 3. **Growing** — middle 40% by CLV with P(purchase) ≥ 0.20
 4. **Low Value** — bottom 40% by CLV with P(purchase) ≥ 0.20
 
-The 0.20 threshold pools 713 customers (14.5%) into At-Risk. Sensitivity analysis shows this is a deliberate choice: lowering to 0.10 captures only 230 customers (too few for a campaign), raising to 0.30 dilutes the segment with 1,109 customers who have reasonable engagement.
+The 0.20 threshold pools 747 customers (15.2%) into At-Risk. Sensitivity analysis shows this is a deliberate choice: lowering to 0.10 captures only 231 customers (too few for a campaign), raising to 0.30 dilutes the segment with 1,130 customers who have reasonable engagement.
 
 ### Campaign sensitivity instead of fabricated conversion rates
 
