@@ -71,7 +71,7 @@ Two-stage machine learning pipeline that predicts which e-commerce customers wil
 
 ## Dashboard
 
-[**Live demo →**](https://your-app-url.streamlit.app) · Launch locally with `streamlit run src/app.py`
+[**Live demo →**](https://ecommerce-clv-prediction.streamlit.app/) · Launch locally with `streamlit run src/app.py`
 
 ![Executive Summary](assets/dashboard_executive_summary.png)
 
