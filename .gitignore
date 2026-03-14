@@ -209,8 +209,10 @@ marimo/_lsp/
 __marimo__/
 
 # Ignore Data Files (Too large for Git, and often contain sensitive information)
-data/
-*.csv
+data/*
+!data/processed/
+data/processed/*
+!data/processed/clv_final.csv
 *.xlsx
 
 # Ignore Credentials/Secrets (CRITICAL)
