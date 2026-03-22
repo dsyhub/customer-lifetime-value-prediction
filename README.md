@@ -6,72 +6,11 @@
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.55-FF4B4B?logo=streamlit&logoColor=white)
 ![SHAP](https://img.shields.io/badge/SHAP-0.51-blueviolet)
 
-Two-stage machine learning pipeline that predicts which e-commerce customers will purchase again, how much they'll spend, and segments them into actionable marketing tiers — validated against a 183-day holdout window.
+Which customers will buy again, and how much will they spend? This project scores 4,918 e-commerce customers into actionable marketing segments using a two-stage ML pipeline (purchase propensity + revenue estimation). In holdout validation on real transaction data, the top 20% of predicted CLV captured 69% of actual revenue.
 
----
+## Live Demo
 
-## Key Results
-
-- **Top 20% of predicted CLV captures 68.6% of actual holdout revenue** — the model correctly identifies the customers who matter most
-- **Brier score 0.1764** on held-out test data (29% reduction vs. naive baseline), confirming calibrated probabilities feed directly into reliable CLV estimates
-- **Revenue calibration ratio of 0.895** — total predicted CLV undershoots actual holdout revenue by 10.5%, a conservative and operationally safe bias
-- **4,918 customers scored and segmented into 4 tiers** with differentiated campaign budgets and break-even lift thresholds ready for A/B testing
-
----
-
-## Pipeline Architecture
-
-```
-┌───────────────────────────────────────────────────────────────────────┐
-│                        UCI Online Retail II                           │
-│                   1M rows → 777K clean → 4,918 customers              │
-└────────────────────────────────┬──────────────────────────────────────┘
-                                 │
-                    Temporal split: 2011-06-09
-                    Calibration (69%) │ Holdout (31%)
-                                 │
-              ┌──────────────────┴──────────────────┐
-              ▼                                     ▼
-┌──────────────────────────┐          ┌──────────────────────────┐
-│   STAGE 1: Purchase      │          │   STAGE 2: Expected      │
-│   Propensity             │          │   Revenue                │
-│                          │          │                          │
-│  Calibrated XGBoost      │          │  Spend-tier terciles     │
-│  (Optuna 50 trials,      │          │  via pooled daily rates  │
-│   isotonic calibration)  │          │                          │
-│                          │          │  Low:  $402/customer     │
-│  PR-AUC: 0.8359          │          │  Mid:  $851/customer     │
-│  Brier:  0.1764          │          │  High: $2,866/customer   │
-│                          │          │                          │
-│  Output: P(purchase)     │          │  Output: E[revenue]      │
-└────────────┬─────────────┘          └────────────┬─────────────┘
-             │                                     │
-             └────────────────┬────────────────────┘
-                              ▼
-                 ┌──────────────────────────┐
-                 │   CLV = P(purchase)      │
-                 │       × E[revenue]       │
-                 │                          │
-                 │   Annualized: ×365/183   │
-                 └────────────┬─────────────┘
-                              ▼
-                 ┌──────────────────────────┐
-                 │   4-TIER SEGMENTATION    │
-                 │                          │
-                 │  High Value (20%)  → $5  │
-                 │  Growing   (37%)   → $15 │
-                 │  At-Risk   (15%)   → $10 │
-                 │  Low Value (28%)   → $2  │
-                 └──────────────────────────┘
-```
-
-**Why two stages?** With only ~2,500 buyers in the calibration window, individual-level revenue regression is unreliable. Spend-tier group averages are more stable and interpretable, yielding a 0.895 revenue calibration ratio against the holdout.
-
----
-
-## Dashboard
-
-[**Live demo →**](https://ecommerce-clv-prediction.streamlit.app/) · Launch locally with `streamlit run src/app.py`
+[**Try the interactive dashboard**](https://ecommerce-clv-prediction.streamlit.app/)
 
 ![Executive Summary](assets/dashboard_executive_summary.png)
 
@@ -79,129 +18,61 @@ Two-stage machine learning pipeline that predicts which e-commerce customers wil
 | :----------------------------------------: | :----------------------------------------------: |
 | ![Explorer](assets/dashboard_explorer.png) | ![Sensitivity](assets/dashboard_sensitivity.png) |
 
-| Tab                      | What it shows                                                                                                                                        |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Executive Summary**    | KPI cards (total customers, predicted revenue, top-20% capture, Brier score), segment distribution, revenue-by-segment chart, segment profiles table |
-| **Customer Explorer**    | Look up any customer by ID or score a new customer with manual feature entry. SHAP waterfall shows top-5 prediction drivers with direction labels.   |
-| **Campaign Sensitivity** | Per-segment budget sliders, break-even incremental lift table, ROI sensitivity chart with break-even dots — no fabricated conversion rates           |
+## Key Results
 
----
+| Metric | Value | What it means |
+| ------ | ----- | ------------- |
+| Top-20% CLV capture | **68.6%** of actual holdout revenue | The model correctly identifies the customers who matter most |
+| Brier score | **0.1764** (29% better than baseline) | Probability estimates are 29% more accurate than assuming the base rate |
+| Revenue calibration | **0.895** ratio | Predictions are conservative by ~10%, operationally safe |
+| Customers scored | **4,918** across 4 segments | Each segment has a differentiated campaign budget and break-even threshold |
 
-## Project Structure
+## Methodology
+
+**Data preparation.** Starting from ~1M raw transactions (UCI Online Retail II, Dec 2009 to Dec 2011), the pipeline cleans and filters down to ~777K usable rows across 4,918 customers. A temporal split at June 2011 creates a calibration period for training and a 183-day holdout window for validation, preventing any data leakage.
+
+**Stage 1: Purchase propensity.** A calibrated XGBoost classifier predicts each customer's probability of purchasing in the holdout window. Optuna tunes hyperparameters over 50 trials using PR-AUC, then isotonic calibration ensures the output probabilities are accurate (not just well-ranked). This matters because CLV is a dollar-weighted expectation: even small probability errors compound into large revenue misestimates.
+
+**Stage 2: Expected revenue.** With only ~2,500 buyers in the calibration window, individual-level revenue regression would overfit. Instead, customers are grouped into three spend tiers (Low: $402, Mid: $851, High: $2,866) based on pooled daily spend rates. These group averages are more stable and produce a 0.895 revenue calibration ratio against the holdout.
+
+**CLV and segmentation.** The final CLV combines purchase probability with expected revenue (`P(purchase) x E[revenue]`), annualized from the 183-day window. Customers are then assigned to four priority-ordered segments (High Value, Growing, At-Risk, Low Value), each with a differentiated campaign budget and break-even lift threshold.
+
+## Repo Structure
 
 ```
 ├── notebooks/
-│   ├── 01_exploratory_data_analysis.ipynb      # Data cleaning, temporal split, 13 features
-│   ├── 02_purchase_propensity_model.ipynb      # 4-model comparison, Optuna tuning, SHAP
-│   └── 03_customer_lifetime_value_segmentation.ipynb  # CLV computation, holdout validation
+│   ├── 01_exploratory_data_analysis.ipynb         # Data cleaning, feature engineering
+│   ├── 02_purchase_propensity_model.ipynb         # Model selection, tuning, SHAP
+│   └── 03_customer_lifetime_value_segmentation.ipynb  # CLV, validation, segmentation
 ├── src/
-│   └── app.py                                  # Streamlit dashboard (4 tabs)
+│   └── app.py                                     # Streamlit dashboard
 ├── models/
-│   ├── purchase_propensity_model.pkl           # Calibrated XGBoost (isotonic, joblib)
-│   └── label_encoders.pkl                      # Country LabelEncoder dict
-├── data/
-│   ├── raw/
-│   │   └── online_retail_II.xlsx               # UCI source (not committed — see below)
-│   └── processed/
-│       ├── clv_data.csv                        # 4,918 × 17 — features from NB01
-│       ├── stage1_scored.csv                   # 4,918 × 20 — with P(purchase) from NB02
-│       └── clv_final.csv                       # 4,918 × 26 — CLV + segments from NB03
+│   ├── purchase_propensity_model.pkl              # Calibrated XGBoost
+│   └── label_encoders.pkl                         # Country encoder
+├── data/processed/
+│   ├── clv_data.csv                               # Feature matrix (4,918 customers)
+│   ├── stage1_scored.csv                          # With purchase probabilities
+│   └── clv_final.csv                              # Final CLV + segments
+├── assets/                                        # Dashboard screenshots
 ├── requirements.txt
-└── .streamlit/config.toml                      # Theme and server config
+└── .streamlit/config.toml                         # Theme config
 ```
 
----
-
-## How to Run
-
-**1. Clone and install**
+## Setup
 
 ```bash
 git clone https://github.com/dsyhub/customer-lifetime-value-prediction.git
 cd customer-lifetime-value-prediction
-python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-**2. Download the dataset**
-
-Download `online_retail_II.xlsx` from the [UCI Machine Learning Repository](https://archive.ics.uci.edu/dataset/502/online+retail+ii) and place it in `data/raw/`.
-
-**3. Run notebooks in order**
-
-```
-notebooks/01_exploratory_data_analysis.ipynb        → outputs data/processed/clv_data.csv
-notebooks/02_purchase_propensity_model.ipynb        → outputs models/*.pkl, data/processed/stage1_scored.csv
-notebooks/03_customer_lifetime_value_segmentation.ipynb → outputs data/processed/clv_final.csv
-```
-
-**4. Launch the dashboard**
-
-```bash
 streamlit run src/app.py
 ```
 
-> Processed data and models are committed to the repo, so you can skip steps 2-3 and go straight to the dashboard.
-
----
-
-## Methodology Highlights
-
-### Two-stage evaluation philosophy
-
-Model selection and Optuna tuning optimize **PR-AUC** (discrimination — can the model rank customers?) via 3-fold CV on training data only. Final evaluation uses **Brier score** (calibration — are the probabilities accurate?) because CLV is a dollar-weighted expectation: `P(purchase) × E[revenue]`. A well-ranked but miscalibrated model produces wrong CLV estimates. Isotonic calibration (5-fold) bridges the gap.
-
-### Why Brier score over log loss
-
-Log loss penalizes confident wrong predictions exponentially, which is useful during training (it's XGBoost's implicit loss). But for CLV, we care about **average probability accuracy across the portfolio**, not worst-case confidence. Brier score measures mean squared error of probabilities — directly interpretable as "how far off are our purchase probability estimates, on average?" The test-set Brier of 0.1764 vs. naive baseline of 0.2496 means the model reduces probability error by 29% (Brier Skill Score).
-
-### Segmentation cascade and the At-Risk tradeoff
-
-Segments are assigned via priority-ordered rules, not simple CLV quartiles:
-
-1. **High Value** — top 20% by CLV regardless of purchase probability (protect your best customers)
-2. **At-Risk** — P(purchase) < 0.20 _and_ not High Value (low engagement signal)
-3. **Growing** — middle 40% by CLV with P(purchase) ≥ 0.20
-4. **Low Value** — bottom 40% by CLV with P(purchase) ≥ 0.20
-
-The 0.20 threshold pools 747 customers (15.2%) into At-Risk. Sensitivity analysis shows this is a deliberate choice: lowering to 0.10 captures only 231 customers (too few for a campaign), raising to 0.30 dilutes the segment with 1,130 customers who have reasonable engagement.
-
-### Campaign sensitivity instead of fabricated conversion rates
-
-Rather than guessing "this campaign will convert 5% of At-Risk customers," the dashboard computes **break-even incremental lift** per segment. For example, a $10/customer At-Risk campaign breaks even at 4.16% incremental lift (1 in 24 customers). This gives marketers a concrete threshold to evaluate against their own A/B test data.
-
----
-
-## Limitations & Next Steps
-
-### Limitations
-
-- **Revenue tiers use historical spending levels.** Customers who shift spending behavior over time land in the wrong tier. A regression model would help but requires a larger buyer base than the current ~2,500 to avoid overfitting.
-- **Linear annualization assumes stable purchase rates.** The 183-day holdout (Jun-Dec) includes holiday season, so annualized CLV likely overstates non-holiday months and understates holiday concentration.
-- **B2B contamination.** Bulk/wholesale orders inflate high-end revenue tiers. Separating B2C from B2B records would improve precision.
-- **Single-market bias.** 91.6% of customers are UK-based. The model may not generalize to other geographies without recalibration.
-
-### Next steps
-
-- Replace spend-tier averages with a regression model as the customer base grows
-- A/B test the campaign budgets per segment to measure true incremental lift and close the feedback loop
-- Add seasonality-aware annualization (e.g., monthly CLV with seasonal adjustment factors)
-- Separate B2B and B2C customers for tier-specific modeling
-
----
+Processed data and trained models are committed to the repo, so the dashboard works immediately. To reproduce from scratch, download `online_retail_II.xlsx` from the [UCI ML Repository](https://archive.ics.uci.edu/dataset/502/online+retail+ii), place it in `data/raw/`, and run the three notebooks in order.
 
 ## Tech Stack
 
-| Category       | Tools                                                                           |
-| -------------- | ------------------------------------------------------------------------------- |
-| ML & Tuning    | XGBoost, scikit-learn, Optuna (50-trial Bayesian search), LightGBM (comparison) |
-| Explainability | SHAP (TreeExplainer, top-5 feature waterfall)                                   |
-| Data           | pandas, NumPy, SciPy                                                            |
-| Visualization  | Plotly (dashboard), matplotlib + seaborn (notebooks)                            |
-| App            | Streamlit (cached data/model loading, custom theme)                             |
+Python, XGBoost, scikit-learn, SHAP, Optuna, Streamlit, Plotly, pandas, NumPy, SciPy
 
----
+## Next Steps
 
-## Data Source
-
-[UCI Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii) — 1,067,371 transactions from a UK-based online retailer, Dec 2009 - Dec 2011.
+As the customer base grows, individual-level revenue regression can replace spend-tier averages for finer-grained CLV estimates. A/B testing the per-segment campaign budgets would measure true incremental lift and close the feedback loop between predictions and marketing outcomes.
