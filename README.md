@@ -20,12 +20,12 @@ Which customers will buy again, and how much will they spend? This project score
 
 ## Key Results
 
-| Metric | Value | What it means |
-| ------ | ----- | ------------- |
-| Top-20% CLV capture | **68.6%** of actual holdout revenue | The model correctly identifies the customers who matter most |
-| Brier score | **0.1764** (29% better than baseline) | Probability estimates are 29% more accurate than assuming the base rate |
-| Revenue calibration | **0.895** ratio | Predictions are conservative by ~10%, operationally safe |
-| Customers scored | **4,918** across 4 segments | Each segment has a differentiated campaign budget and break-even threshold |
+| Metric              | Value                                 | What it means                                                              |
+| ------------------- | ------------------------------------- | -------------------------------------------------------------------------- |
+| Top 20% CLV capture | **68.8%** of actual holdout revenue   | The model correctly identifies the customers who matter most               |
+| Brier score         | **0.1760** (29% better than baseline) | Probability estimates are 29% more accurate than assuming the base rate    |
+| Revenue calibration | **0.897** ratio                       | Predictions are conservative by ~10%, operationally safe                   |
+| Customers scored    | **4,918** across 4 segments           | Each segment has a differentiated campaign budget and break-even threshold |
 
 ## Methodology
 
@@ -33,7 +33,7 @@ Which customers will buy again, and how much will they spend? This project score
 
 **Stage 1: Purchase propensity.** A calibrated XGBoost classifier predicts each customer's probability of purchasing in the holdout window. Optuna tunes hyperparameters over 50 trials using PR-AUC, then isotonic calibration ensures the output probabilities are accurate (not just well-ranked). This matters because CLV is a dollar-weighted expectation: even small probability errors compound into large revenue misestimates.
 
-**Stage 2: Expected revenue.** With only ~2,500 buyers in the calibration window, individual-level revenue regression would overfit. Instead, customers are grouped into three spend tiers (Low: $402, Mid: $851, High: $2,866) based on pooled daily spend rates. These group averages are more stable and produce a 0.895 revenue calibration ratio against the holdout.
+**Stage 2: Expected revenue.** With only ~2,500 buyers in the calibration window, individual-level revenue regression would overfit. Instead, customers are grouped into three spend tiers (Low: $402, Mid: $851, High: $2,866) based on pooled daily spend rates. These group averages are more stable and produce a 0.897 revenue calibration ratio against the holdout.
 
 **CLV and segmentation.** The final CLV combines purchase probability with expected revenue (`P(purchase) x E[revenue]`), annualized from the 183-day window. Customers are then assigned to four priority-ordered segments (High Value, Growing, At-Risk, Low Value), each with a differentiated campaign budget and break-even lift threshold.
 

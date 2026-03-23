@@ -1,5 +1,5 @@
 """
-CLV Dashboard — Customer Lifetime Value Predictor
+CLV Dashboard: Customer Lifetime Value Predictor
 Run from repo root: streamlit run src/app.py
 """
 
@@ -44,22 +44,22 @@ SEGMENT_ORDER = ["High Value", "Growing", "At-Risk", "Low Value"]
 SEGMENT_CONFIG = {
     "High Value": {
         "color": "#2563EB",
-        "action": "VIP loyalty — no discounts, protect margin",
+        "action": "VIP loyalty: no discounts, protect margin",
         "icon": "💎",
     },
     "Growing": {
         "color": "#16A34A",
-        "action": "Personalized offer — growth potential justifies investment",
+        "action": "Personalized offer, growth potential justifies investment",
         "icon": "📈",
     },
     "At-Risk": {
         "color": "#EA580C",
-        "action": "Win-back campaign — act before permanent dropout",
+        "action": "Win-back campaign, act before permanent dropout",
         "icon": "⚠️",
     },
     "Low Value": {
         "color": "#9CA3AF",
-        "action": "Email-only touch — minimal budget, monitor for growth",
+        "action": "Email-only touch, minimal budget, monitor for growth",
         "icon": "📧",
     },
 }
@@ -284,9 +284,13 @@ with tab1:
     top20_capture = top20_rev / total_holdout_rev if total_holdout_rev > 0 else 0
 
     # Brier score on test set only (avoids in-sample bias from training data)
-    test_mask = df["is_test"] if "is_test" in df.columns else pd.Series(True, index=df.index)
+    test_mask = (
+        df["is_test"] if "is_test" in df.columns else pd.Series(True, index=df.index)
+    )
     test_df_brier = df[test_mask]
-    brier = brier_score_loss(test_df_brier["purchased_in_holdout"], test_df_brier["p_purchase"])
+    brier = brier_score_loss(
+        test_df_brier["purchased_in_holdout"], test_df_brier["p_purchase"]
+    )
     base_rate = test_df_brier["purchased_in_holdout"].mean()
     brier_baseline = base_rate * (1 - base_rate)
 
@@ -328,7 +332,7 @@ with tab1:
             f"<span style='width:10px;height:10px;border-radius:50%;"
             f"background:{color};display:inline-block'></span>"
             f"<span style='font-size:13px;font-weight:500;color:#374151'>"
-            f"{seg} — {cnt:,} ({pct:.0f}%)</span></span>"
+            f"{seg}: {cnt:,} ({pct:.0f}%)</span></span>"
         )
     st.markdown(pills_html, unsafe_allow_html=True)
 
@@ -792,7 +796,7 @@ with tab3:
                 "Budget": f"${budget}",
                 "Avg CLV": f"${avg_clv:,.0f}",
                 "Break-Even Lift": f"{be_lift:.2%}" if budget > 0 else "N/A",
-                "Intuition": f"1 in {one_in_n:,}" if budget > 0 else "—",
+                "Intuition": f"1 in {one_in_n:,}" if budget > 0 else "N/A",
                 "Action": SEGMENT_CONFIG[seg]["action"],
             }
         )
@@ -863,12 +867,12 @@ with tab4:
     st.subheader("Methodology")
     st.markdown(
         "This dashboard uses a **two-stage approach** to predict Customer Lifetime Value:\n\n"
-        "1. **Stage 1 — Purchase Propensity:** A calibrated XGBoost classifier predicts "
+        "1. **Stage 1: Purchase Propensity.** A calibrated XGBoost classifier predicts "
         "the probability that each customer will make a purchase in the next 6 months. "
         "The model was selected from a 4-model comparison (Logistic Regression, Random Forest, "
         "XGBoost, LightGBM), tuned with Optuna (50 trials), and calibrated with isotonic "
         "regression to produce accurate probabilities.\n\n"
-        "2. **Stage 2 — Expected Revenue:** Rather than predicting individual spend amounts "
+        "2. **Stage 2: Expected Revenue.** Rather than predicting individual spend amounts "
         "(which yielded negative R²), customers are grouped into spend tiers (Low, Mid, High) "
         "using tercile splits. The tier average serves as the expected revenue given a purchase.\n\n"
         "3. **CLV Formula:** `P(purchase) × E[revenue | purchase]`, annualized from the "
@@ -880,7 +884,7 @@ with tab4:
     st.subheader("Data")
     st.markdown(
         "- **Source:** [UCI Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii) "
-        "dataset — ~4,900 customers, Dec 2009 to Dec 2011\n"
+        "dataset (~4,900 customers, Dec 2009 to Dec 2011)\n"
         "- **Temporal Holdout:** Calibration period ends 2011-06-09; holdout runs "
         "2011-06-09 to 2011-12-09 (183 days)\n"
         "- **Features:** 12 engineered features spanning RFM metrics, purchase behavior, "
@@ -892,15 +896,15 @@ with tab4:
     st.subheader("Segmentation Rules")
     seg_rules = pd.DataFrame(
         [
-            ["High Value", "Top 20% by CLV", "Any", "VIP loyalty — protect margin"],
+            ["High Value", "Top 20% by CLV", "Any", "VIP loyalty: protect margin"],
             [
                 "Growing",
                 "Middle 40%",
                 ">= 20%",
-                "Personalized offers — growth potential",
+                "Personalized offers, growth potential",
             ],
-            ["At-Risk", "Any", "< 20%", "Win-back campaigns — act before dropout"],
-            ["Low Value", "Bottom 40%", ">= 20%", "Email-only — minimal budget"],
+            ["At-Risk", "Any", "< 20%", "Win-back campaigns, act before dropout"],
+            ["Low Value", "Bottom 40%", ">= 20%", "Email-only, minimal budget"],
         ],
         columns=["Segment", "CLV Threshold", "P(purchase)", "Strategy"],
     )
