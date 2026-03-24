@@ -44,22 +44,22 @@ SEGMENT_ORDER = ["High Value", "Growing", "At-Risk", "Low Value"]
 SEGMENT_CONFIG = {
     "High Value": {
         "color": "#2563EB",
-        "action": "VIP loyalty: no discounts, protect margin",
+        "action": "VIP loyalty, protect margin",
         "icon": "💎",
     },
     "Growing": {
         "color": "#16A34A",
-        "action": "Personalized offer, growth potential justifies investment",
+        "action": "Personalized offers, invest in growth",
         "icon": "📈",
     },
     "At-Risk": {
         "color": "#EA580C",
-        "action": "Win-back campaign, act before permanent dropout",
+        "action": "Win-back campaign, act fast",
         "icon": "⚠️",
     },
     "Low Value": {
         "color": "#9CA3AF",
-        "action": "Email-only touch, minimal budget, monitor for growth",
+        "action": "Email-only, minimal budget",
         "icon": "📧",
     },
 }
