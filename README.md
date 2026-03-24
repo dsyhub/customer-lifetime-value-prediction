@@ -12,9 +12,8 @@ Which customers will buy again, and how much will they spend? This project score
 
 [**Try the interactive dashboard**](https://ecommerce-clv-prediction.streamlit.app/)
 
-<!-- Replace with GIF after recording: ![Dashboard Walkthrough](assets/dashboard_walkthrough.gif) -->
 
-![Executive Summary](assets/dashboard_executive_summary.png)
+![Dashboard Walkthrough](assets/dashboard_walkthrough.gif)
 
 |             Customer Explorer              |               Campaign Sensitivity               |
 | :----------------------------------------: | :----------------------------------------------: |
@@ -44,13 +43,13 @@ flowchart TD
 
 ## Methodology
 
-**Data preparation.** Starting from ~1M raw transactions (UCI Online Retail II, Dec 2009 to Dec 2011), the pipeline cleans and filters down to ~777K usable rows across 4,918 customers. A temporal split at June 2011 creates a calibration period for training and a 183-day holdout window for validation, preventing any data leakage.
+**Data preparation:** Starting from ~1M raw transactions (UCI Online Retail II, Dec 2009 to Dec 2011), the pipeline cleans and filters down to ~777K usable rows across 4,918 customers. A temporal split at June 2011 creates a calibration period for training and a 183-day holdout window for validation, preventing any data leakage.
 
-**Stage 1: Purchase propensity.** A calibrated XGBoost classifier predicts each customer's probability of purchasing in the holdout window. Optuna tunes hyperparameters over 50 trials using PR-AUC, then isotonic calibration ensures the output probabilities are accurate (not just well-ranked). This matters because CLV is a dollar-weighted expectation: even small probability errors compound into large revenue misestimates.
+**Stage 1 - Purchase propensity:** A calibrated XGBoost classifier predicts each customer's probability of purchasing in the holdout window. Optuna tunes hyperparameters over 50 trials using PR-AUC, then isotonic calibration ensures the output probabilities are accurate (not just well-ranked). This matters because CLV is a dollar-weighted expectation: even small probability errors compound into large revenue misestimates.
 
-**Stage 2: Expected revenue.** With only ~2,500 buyers in the calibration window, individual-level revenue regression would overfit. Instead, customers are grouped into three spend tiers (Low, Mid, High) via tercile splits on average transaction value. Expected revenue per tier is estimated using a pooled daily spend rate — sum(total spend) / sum(observation days) within each tier — which weights longer-observed customers more heavily, reducing noise from short-tenure spending bursts. Scaled to the 183-day holdout window, this produces tier estimates of $402, $851, and $2,866, with a 0.897 revenue calibration ratio against the holdout.
+**Stage 2 - Expected revenue:** With only ~2,500 buyers in the calibration window, individual-level revenue regression would overfit. Instead, customers are grouped into three spend tiers (Low, Mid, High) via tercile splits on average transaction value. Expected revenue per tier is estimated using a pooled daily spend rate — sum(total spend) / sum(observation days) within each tier — which weights longer-observed customers more heavily, reducing noise from short-tenure spending bursts. Scaled to the 183-day holdout window, this produces tier estimates of $402, $851, and $2,866, with a 0.897 revenue calibration ratio against the holdout.
 
-**CLV and segmentation.** The final CLV combines purchase probability with expected revenue (`P(purchase) x E[revenue]`), annualized from the 183-day window. Customers are then assigned to four priority-ordered segments (High Value, Growing, At-Risk, Low Value), each with a differentiated campaign budget and break-even lift threshold.
+**CLV and segmentation:** The final CLV combines purchase probability with expected revenue (`P(purchase) x E[revenue]`), annualized from the 183-day window. Customers are then assigned to four priority-ordered segments (High Value, Growing, At-Risk, Low Value), each with a differentiated campaign budget and break-even lift threshold.
 
 ## Repo Structure
 
