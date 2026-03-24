@@ -178,7 +178,7 @@ def render_shap_panel(shap_vals, feature_values):
         height=300,
         margin=dict(t=10, b=30, l=120, r=60),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     # Direction labels
     for i in top5_idx:
@@ -235,7 +235,7 @@ with st.expander("About this project", expanded=False):
     st.markdown(
         "**Two-stage Customer Lifetime Value prediction** for e-commerce retention.\n\n"
         "- **Stage 1:** Calibrated XGBoost classifier predicts purchase probability\n"
-        "- **Stage 2:** Spend-tier revenue estimation via tercile averages\n"
+        "- **Stage 2:** Spend-tier revenue estimation via pooled daily spend rates\n"
         "- **CLV:** P(purchase) x E[revenue | purchase], annualized\n"
         "- **Segmentation:** 4-tier customer segments with actionable campaign strategies\n\n"
         "Built with: Python, XGBoost, Scikit-learn, Streamlit, Plotly\n\n"
@@ -319,6 +319,57 @@ with tab1:
         "Four segments receive differentiated marketing strategies."
     )
 
+    with st.expander("Model Card"):
+        # ---- Flow diagram (HTML/CSS) ----------------------------------------
+        flow_steps = [
+            ("Raw Transactions", "#6B7280"),
+            ("Feature Engineering\n(RFM + Behavioral)", "#6B7280"),
+            ("Stage 1: Calibrated XGBoost\n(Purchase Propensity)", "#2563EB"),
+            ("Stage 2: Spend-Tier\nRevenue Estimation", "#2563EB"),
+            ("CLV = P(purchase)\n\u00d7 E[revenue]", "#059669"),
+            ("4-Tier\nSegmentation", "#059669"),
+        ]
+        boxes_html = ""
+        for i, (label, color) in enumerate(flow_steps):
+            label_html = label.replace("\n", "<br>")
+            boxes_html += (
+                f"<div style='display:flex;align-items:center'>"
+                f"<div style='background:{color};color:white;border-radius:8px;"
+                f"padding:10px 16px;font-size:13px;font-weight:500;"
+                f"text-align:center;min-width:120px;line-height:1.4'>"
+                f"{label_html}</div>"
+            )
+            if i < len(flow_steps) - 1:
+                boxes_html += (
+                    "<div style='font-size:20px;color:#9CA3AF;"
+                    "margin:0 6px'>\u2192</div>"
+                )
+            boxes_html += "</div>"
+        st.markdown(
+            f"<div style='display:flex;align-items:center;flex-wrap:wrap;"
+            f"gap:4px;margin-bottom:16px'>{boxes_html}</div>",
+            unsafe_allow_html=True,
+        )
+
+        # ---- Model card details in two columns ------------------------------
+        mc_left, mc_right = st.columns(2)
+        with mc_left:
+            st.markdown(
+                "**Model**\n"
+                "- XGBoost classifier + isotonic calibration (5-fold)\n"
+                "- Optuna tuning: 50 trials, 3-fold CV (PR-AUC)\n"
+                "- 12 input features (RFM, behavioral, country)\n"
+                "- Temporal holdout split: 2011-06-09 (183 days)"
+            )
+        with mc_right:
+            st.markdown(
+                "**Performance**\n"
+                "- Brier score: ~0.18 (naive baseline ~0.25)\n"
+                "- PR-AUC: ~0.84\n"
+                "- Spend tiers: Low $402 / Mid $851 / High $2,866 (pooled daily spend rate \u00d7 183 days)\n"
+                "- CLV annualized via 365/183 scaling factor"
+            )
+
     # Segment legend pills
     seg_counts = df["segment"].value_counts()
     pills_html = ""
@@ -361,7 +412,7 @@ with tab1:
     fig_bar.update_traces(
         textposition="inside", textfont_size=12, textfont_color="white"
     )
-    st.plotly_chart(fig_bar, use_container_width=True)
+    st.plotly_chart(fig_bar, width='stretch')
 
     st.divider()
 
@@ -408,7 +459,7 @@ with tab1:
         fig_rev.update_traces(
             textposition="inside", textfont_size=12, textfont_color="white"
         )
-        st.plotly_chart(fig_rev, use_container_width=True)
+        st.plotly_chart(fig_rev, width='stretch')
 
     with col_right:
         st.subheader("Segment Profiles")
@@ -432,7 +483,7 @@ with tab1:
             seg_profile.style.format(
                 {"Avg_CLV": "${:,.0f}", "Avg_p_purchase": "{:.0%}"}
             ),
-            use_container_width=True,
+            width='stretch',
             height=220,
         )
 
@@ -725,7 +776,7 @@ with tab2:
                 )
             )
             fig.update_layout(height=300, margin=dict(t=30, b=10, l=30, r=30))
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width='stretch')
 
 
 # ===========================================================================
@@ -801,7 +852,7 @@ with tab3:
             }
         )
 
-    st.dataframe(pd.DataFrame(be_data), use_container_width=True, hide_index=True)
+    st.dataframe(pd.DataFrame(be_data), width='stretch', hide_index=True)
 
     st.divider()
 
@@ -857,7 +908,7 @@ with tab3:
         margin=dict(t=20, b=40, l=60, r=20),
         legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
     )
-    st.plotly_chart(fig_roi, use_container_width=True)
+    st.plotly_chart(fig_roi, width='stretch')
 
 
 # ===========================================================================
@@ -874,7 +925,9 @@ with tab4:
         "regression to produce accurate probabilities.\n\n"
         "2. **Stage 2: Expected Revenue.** Rather than predicting individual spend amounts "
         "(which yielded negative R²), customers are grouped into spend tiers (Low, Mid, High) "
-        "using tercile splits. The tier average serves as the expected revenue given a purchase.\n\n"
+        "using tercile splits on monetary value. Expected revenue is estimated via a pooled "
+        "daily spend rate within each tier, which weights longer-observed customers more heavily "
+        "to reduce noise from short-tenure spending bursts.\n\n"
         "3. **CLV Formula:** `P(purchase) × E[revenue | purchase]`, annualized from the "
         "183-day holdout window via 365/183 scaling."
     )
@@ -908,7 +961,7 @@ with tab4:
         ],
         columns=["Segment", "CLV Threshold", "P(purchase)", "Strategy"],
     )
-    st.dataframe(seg_rules, use_container_width=True, hide_index=True)
+    st.dataframe(seg_rules, width='stretch', hide_index=True)
 
     st.divider()
 
