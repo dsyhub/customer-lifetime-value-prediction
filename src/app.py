@@ -178,7 +178,7 @@ def render_shap_panel(shap_vals, feature_values):
         height=300,
         margin=dict(t=10, b=30, l=120, r=60),
     )
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, width="stretch")
 
     # Direction labels
     for i in top5_idx:
@@ -225,11 +225,7 @@ st.set_page_config(
 )
 
 st.title("Customer Lifetime Value Dashboard")
-st.caption(
-    "Two-stage CLV model (purchase propensity + spend tiers) · "
-    "UCI Online Retail II · "
-    "Calibration: before 2011-06-09 | Holdout: 2011-06-09 → 2011-12-09"
-)
+st.caption("Two-stage CLV model · UCI Online Retail II · Holdout: Jun-Dec 2011")
 
 with st.expander("About this project", expanded=False):
     st.markdown(
@@ -312,12 +308,23 @@ with tab1:
 
     # ---- Pipeline overview ------------------------------------------------
     st.subheader("Pipeline Overview")
-    st.markdown(
-        "Stage 1 predicts purchase probability (calibrated XGBoost). "
-        "Stage 2 estimates expected revenue by spend tier. "
-        "CLV = P(purchase) × E[revenue | purchase]. "
-        "Four segments receive differentiated marketing strategies."
-    )
+    steps = [
+        ("Stage 1", "Propensity", "Calibrated XGBoost → P(purchase)", "#2563EB"),
+        ("Stage 2", "Revenue", "Pooled daily spend rate → E[rev | buy]", "#059669"),
+        ("CLV", "Segments", "P(buy) × E[rev], annualized → 4 tiers", "#7C3AED"),
+    ]
+    steps_html = "<div style='display:flex;gap:12px;flex-wrap:wrap;max-width:900px'>"
+    for label, title, desc, color in steps:
+        steps_html += (
+            f"<div style='flex:1;min-width:220px;max-width:300px;border-left:3px solid {color};"
+            f"padding:8px 12px;background:var(--secondary-background-color, #F9FAFB);"
+            f"border-radius:0 6px 6px 0'>"
+            f"<div style='font-weight:600;font-size:14px;color:{color}'>{label}: {title}</div>"
+            f"<div style='font-size:13px;color:#6B7280;margin-top:2px'>{desc}</div>"
+            f"</div>"
+        )
+    steps_html += "</div>"
+    st.markdown(steps_html, unsafe_allow_html=True)
 
     with st.expander("Model Card"):
         # ---- Flow diagram (HTML/CSS) ----------------------------------------
@@ -412,12 +419,12 @@ with tab1:
     fig_bar.update_traces(
         textposition="inside", textfont_size=12, textfont_color="white"
     )
-    st.plotly_chart(fig_bar, width='stretch')
+    st.plotly_chart(fig_bar, width="stretch")
 
     st.divider()
 
     # ---- Charts -----------------------------------------------------------
-    col_left, col_right = st.columns(2)
+    col_left, col_right = st.columns([3, 2])
 
     with col_left:
         st.subheader("Predicted 12-Month Revenue by Segment")
@@ -459,7 +466,7 @@ with tab1:
         fig_rev.update_traces(
             textposition="inside", textfont_size=12, textfont_color="white"
         )
-        st.plotly_chart(fig_rev, width='stretch')
+        st.plotly_chart(fig_rev, width="stretch")
 
     with col_right:
         st.subheader("Segment Profiles")
@@ -475,15 +482,12 @@ with tab1:
             seg_profile.index, categories=SEGMENT_ORDER, ordered=True
         )
         seg_profile = seg_profile.sort_index()
-        seg_profile["Action"] = [
-            SEGMENT_CONFIG.get(s, {}).get("action", "") for s in seg_profile.index
-        ]
 
         st.dataframe(
             seg_profile.style.format(
                 {"Avg_CLV": "${:,.0f}", "Avg_p_purchase": "{:.0%}"}
             ),
-            width='stretch',
+            width="stretch",
             height=220,
         )
 
@@ -776,7 +780,7 @@ with tab2:
                 )
             )
             fig.update_layout(height=300, margin=dict(t=30, b=10, l=30, r=30))
-            st.plotly_chart(fig, width='stretch')
+            st.plotly_chart(fig, width="stretch")
 
 
 # ===========================================================================
@@ -852,7 +856,7 @@ with tab3:
             }
         )
 
-    st.dataframe(pd.DataFrame(be_data), width='stretch', hide_index=True)
+    st.dataframe(pd.DataFrame(be_data), width="stretch", hide_index=True)
 
     st.divider()
 
@@ -908,7 +912,7 @@ with tab3:
         margin=dict(t=20, b=40, l=60, r=20),
         legend=dict(orientation="h", yanchor="top", y=-0.15, xanchor="center", x=0.5),
     )
-    st.plotly_chart(fig_roi, width='stretch')
+    st.plotly_chart(fig_roi, width="stretch")
 
 
 # ===========================================================================
@@ -961,7 +965,7 @@ with tab4:
         ],
         columns=["Segment", "CLV Threshold", "P(purchase)", "Strategy"],
     )
-    st.dataframe(seg_rules, width='stretch', hide_index=True)
+    st.dataframe(seg_rules, width="stretch", hide_index=True)
 
     st.divider()
 
