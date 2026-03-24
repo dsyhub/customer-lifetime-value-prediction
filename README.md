@@ -33,11 +33,11 @@ Which customers will buy again, and how much will they spend? This project score
 
 ```mermaid
 flowchart TD
-    A["Raw transactions<br/><sub>~1M rows · UCI Online Retail II</sub>"] --> B["Feature engineering<br/><sub>4,918 customers · RFM + behavioral</sub>"]
-    B --> C["Temporal split<br/><sub>Jun 2011 cutoff</sub>"]
-    C --> D["Stage 1: Purchase propensity<br/><sub>Calibrated XGBoost · SHAP</sub>"]
-    C --> E["Stage 2: Revenue estimation<br/><sub>Tercile tiers · pooled daily spend rate</sub>"]
-    D --> F["CLV = P(buy) × E[revenue]<br/><sub>4 segments · annualized</sub>"]
+    A["Raw transactions\n~1M rows"] --> B["Feature engineering\n4,918 customers"]
+    B --> C["Temporal split\nJun 2011"]
+    C --> D["Stage 1: Propensity\nCalibrated XGBoost"]
+    C --> E["Stage 2: Revenue\nPooled spend tiers"]
+    D --> F["CLV scoring\n4 segments"]
     E --> F
     F --> G["Streamlit dashboard"]
 ```
