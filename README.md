@@ -12,6 +12,8 @@ Which customers will buy again, and how much will they spend? This project score
 
 [**Try the interactive dashboard**](https://ecommerce-clv-prediction.streamlit.app/)
 
+<!-- Replace with GIF after recording: ![Dashboard Walkthrough](assets/dashboard_walkthrough.gif) -->
+
 ![Executive Summary](assets/dashboard_executive_summary.png)
 
 |             Customer Explorer              |               Campaign Sensitivity               |
@@ -26,6 +28,19 @@ Which customers will buy again, and how much will they spend? This project score
 | Brier score         | **0.1760** (29% better than baseline) | Probability estimates are 29% more accurate than assuming the base rate    |
 | Revenue calibration | **0.897** ratio                       | Predictions are conservative by ~10%, operationally safe                   |
 | Customers scored    | **4,918** across 4 segments           | Each segment has a differentiated campaign budget and break-even threshold |
+
+## Pipeline
+
+```mermaid
+flowchart TD
+    A["Raw transactions<br/><sub>~1M rows · UCI Online Retail II</sub>"] --> B["Feature engineering<br/><sub>4,918 customers · RFM + behavioral</sub>"]
+    B --> C["Temporal split<br/><sub>Jun 2011 cutoff</sub>"]
+    C --> D["Stage 1: Purchase propensity<br/><sub>Calibrated XGBoost · SHAP</sub>"]
+    C --> E["Stage 2: Revenue estimation<br/><sub>Tercile tiers · pooled daily spend rate</sub>"]
+    D --> F["CLV = P(buy) × E[revenue]<br/><sub>4 segments · annualized</sub>"]
+    E --> F
+    F --> G["Streamlit dashboard"]
+```
 
 ## Methodology
 
