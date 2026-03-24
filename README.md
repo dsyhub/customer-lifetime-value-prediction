@@ -12,12 +12,7 @@ Which customers will buy again, and how much will they spend? This project score
 
 [**Try the interactive dashboard**](https://ecommerce-clv-prediction.streamlit.app/)
 
-
 ![Dashboard Walkthrough](assets/dashboard_walkthrough.gif)
-
-|             Customer Explorer              |               Campaign Sensitivity               |
-| :----------------------------------------: | :----------------------------------------------: |
-| ![Explorer](assets/dashboard_explorer.png) | ![Sensitivity](assets/dashboard_sensitivity.png) |
 
 ## Key Results
 
