@@ -13,6 +13,21 @@ import shap
 from pathlib import Path
 from sklearn.metrics import brier_score_loss
 
+from src.clv_logic import (
+    FEATURE_COLS,
+    SEGMENT_ORDER,
+    SEGMENT_CONFIG,
+    DEFAULT_BUDGETS,
+    CLV_TOP20_PCT,
+    CLV_BOTTOM40_PCT,
+    P_PURCHASE_THRESHOLD,
+    HOLDOUT_DAYS,
+    classify_segment,
+    compute_clv_12m,
+    assign_spend_tier,
+    compute_break_even_lift,
+)
+
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
@@ -22,55 +37,8 @@ PROPENSITY_PATH = REPO_ROOT / "models" / "purchase_propensity_model.pkl"
 ENCODERS_PATH = REPO_ROOT / "models" / "label_encoders.pkl"
 
 # ---------------------------------------------------------------------------
-# Constants
+# UI-specific constants
 # ---------------------------------------------------------------------------
-FEATURE_COLS = [
-    "frequency",
-    "recency",
-    "T",
-    "monetary_value",
-    "avg_order_value",
-    "unique_products",
-    "avg_basket_size",
-    "interpurchase_std",
-    "is_one_time_buyer",
-    "cancellation_rate",
-    "recency_ratio",
-    "country_enc",
-]
-
-SEGMENT_ORDER = ["High Value", "Growing", "At-Risk", "Low Value"]
-
-SEGMENT_CONFIG = {
-    "High Value": {
-        "color": "#2563EB",
-        "action": "VIP loyalty, protect margin",
-        "icon": "💎",
-    },
-    "Growing": {
-        "color": "#16A34A",
-        "action": "Personalized offers, invest in growth",
-        "icon": "📈",
-    },
-    "At-Risk": {
-        "color": "#EA580C",
-        "action": "Win-back campaign, act fast",
-        "icon": "⚠️",
-    },
-    "Low Value": {
-        "color": "#9CA3AF",
-        "action": "Email-only, minimal budget",
-        "icon": "📧",
-    },
-}
-
-DEFAULT_BUDGETS = {"High Value": 5, "Growing": 15, "At-Risk": 10, "Low Value": 2}
-
-CLV_TOP20_PCT = 0.80
-CLV_BOTTOM40_PCT = 0.40
-P_PURCHASE_THRESHOLD = 0.20
-HOLDOUT_DAYS = 183
-
 # Human-readable SHAP direction labels
 SHAP_LABELS = {
     "frequency": lambda v: (
@@ -124,18 +92,6 @@ def load_shap_explainer():
             return None
         X_bg = df[FEATURE_COLS].sample(min(100, len(df)), random_state=42)
         return shap.LinearExplainer(base_est, X_bg)
-
-
-def classify_segment(clv_12m, p_purchase, top20_threshold, bottom40_threshold):
-    """Assign 4-tier segment based on CLV and p_purchase."""
-    if clv_12m > top20_threshold:
-        return "High Value"
-    elif p_purchase < P_PURCHASE_THRESHOLD:
-        return "At-Risk"
-    elif clv_12m > bottom40_threshold:
-        return "Growing"
-    else:
-        return "Low Value"
 
 
 def compute_shap_for_row(X_row):
@@ -697,20 +653,16 @@ with tab2:
                 tier_thresholds = (
                     df_portfolio["monetary_value"].quantile([1 / 3, 2 / 3]).values
                 )
-                if monetary_value <= tier_thresholds[0]:
-                    spend_tier = "Low Spend"
-                elif monetary_value <= tier_thresholds[1]:
-                    spend_tier = "Mid Spend"
-                else:
-                    spend_tier = "High Spend"
+                spend_tier = assign_spend_tier(
+                    monetary_value, tier_thresholds[0], tier_thresholds[1]
+                )
             else:
                 spend_tier = "Mid Spend"
 
             expected_rev = tier_avg_map.get(spend_tier, 500.0)
 
             # Combined CLV
-            clv_180d = p_purchase * expected_rev
-            clv_12m = clv_180d * (365 / HOLDOUT_DAYS)
+            clv_12m = compute_clv_12m(p_purchase, expected_rev)
 
             # Segment
             segment = classify_segment(
@@ -838,8 +790,8 @@ with tab3:
     for seg in SEGMENT_ORDER:
         budget = budgets[seg]
         avg_clv = seg_agg.loc[seg, "avg_clv"]
-        if budget > 0 and avg_clv > 0:
-            be_lift = budget / avg_clv
+        be_lift = compute_break_even_lift(budget, avg_clv)
+        if be_lift is not None:
             one_in_n = round(1 / be_lift)
         else:
             be_lift = 0
