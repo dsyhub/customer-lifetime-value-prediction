@@ -13,20 +13,36 @@ import shap
 from pathlib import Path
 from sklearn.metrics import brier_score_loss
 
-from src.clv_logic import (
-    FEATURE_COLS,
-    SEGMENT_ORDER,
-    SEGMENT_CONFIG,
-    DEFAULT_BUDGETS,
-    CLV_TOP20_PCT,
-    CLV_BOTTOM40_PCT,
-    P_PURCHASE_THRESHOLD,
-    HOLDOUT_DAYS,
-    classify_segment,
-    compute_clv_12m,
-    assign_spend_tier,
-    compute_break_even_lift,
-)
+try:
+    from src.clv_logic import (
+        FEATURE_COLS,
+        SEGMENT_ORDER,
+        SEGMENT_CONFIG,
+        DEFAULT_BUDGETS,
+        CLV_TOP20_PCT,
+        CLV_BOTTOM40_PCT,
+        P_PURCHASE_THRESHOLD,
+        HOLDOUT_DAYS,
+        classify_segment,
+        compute_clv_12m,
+        assign_spend_tier,
+        compute_break_even_lift,
+    )
+except ModuleNotFoundError:
+    from clv_logic import (
+        FEATURE_COLS,
+        SEGMENT_ORDER,
+        SEGMENT_CONFIG,
+        DEFAULT_BUDGETS,
+        CLV_TOP20_PCT,
+        CLV_BOTTOM40_PCT,
+        P_PURCHASE_THRESHOLD,
+        HOLDOUT_DAYS,
+        classify_segment,
+        compute_clv_12m,
+        assign_spend_tier,
+        compute_break_even_lift,
+    )
 
 # ---------------------------------------------------------------------------
 # Paths
