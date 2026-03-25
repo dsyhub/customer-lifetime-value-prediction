@@ -12,3 +12,4 @@ lightgbm==4.6.0
 optuna==4.7.0
 matplotlib==3.10.8
 seaborn==0.13.2
+pytest>=7.0
