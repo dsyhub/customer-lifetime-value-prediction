@@ -56,7 +56,9 @@ flowchart TD
 │   ├── 02_purchase_propensity_model.ipynb         # Model selection, tuning, SHAP
 │   └── 03_customer_lifetime_value_segmentation.ipynb  # CLV, validation, segmentation
 ├── src/
-│   └── app.py                                     # Streamlit dashboard
+│   ├── app.py                                     # Streamlit dashboard
+│   └── clv_logic.py                               # Pure business logic (segmentation, CLV, tiers)
+├── tests/                                         # pytest suite
 ├── models/
 │   ├── purchase_propensity_model.pkl              # Calibrated XGBoost
 │   └── label_encoders.pkl                         # Country encoder
@@ -65,6 +67,7 @@ flowchart TD
 │   ├── stage1_scored.csv                          # With purchase probabilities
 │   └── clv_final.csv                              # Final CLV + segments
 ├── assets/                                        # Dashboard walkthrough GIF
+├── pyproject.toml                                 # pytest configuration
 ├── requirements.txt
 └── .streamlit/config.toml                         # Theme config
 ```
