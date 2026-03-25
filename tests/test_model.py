@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from src.clv_logic import HOLDOUT_DAYS
+
 
 pytestmark = pytest.mark.slow
 
@@ -76,7 +78,7 @@ def test_end_to_end_pipeline(model_and_encoders, app, clv_data):
     rev = expected_rev.get(spend_tier, 500.0)
 
     # CLV
-    clv_12m = p_purchase * rev * (365 / app.HOLDOUT_DAYS)
+    clv_12m = p_purchase * rev * (365 / HOLDOUT_DAYS)
     assert clv_12m >= 0
 
     # Segment
